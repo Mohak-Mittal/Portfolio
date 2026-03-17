@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mohak | Game Developer</title>
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body>
+
+    <!-- BACKGROUND WAVES -->
+    <div class="stars">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+     </div>
+    <div class="waves">
+  <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
+    <path fill="#6a00ff" fill-opacity="0.5"
+      d="M0,160L60,176C120,192,240,224,360,224C480,224,600,192,720,176C840,160,960,160,1080,176C1200,192,1320,224,1380,240L1440,256V320H0Z">
+    </path>
+
+    <path fill="#00eaff" fill-opacity="0.4"
+      d="M0,192L60,186C120,180,240,168,360,160C480,152,600,148,720,160C840,172,960,200,1080,208C1200,216,1320,204,1380,198L1440,192V320H0Z">
+    </path>
+  </svg>
+</div>
+
+    <!-- MAIN CONTENT -->
+    <section class="hero" id="main">
+        <div class="content">
+            <h1>Hi, I'm Mohak 👋</h1>
+            <h2>Game Developer</h2>
+            <p>I build immersive experiences using Unreal Engine & Blender.</p>
+            <button onclick="openProjects()">View My Work</button>
+        </div>
+
+        <div class="image">
+            <img src="photo.jpg" alt="Mohak">
+        </div>
+    </section>
+
+    <!-- POPUP PROJECT PANEL -->
+    <div class="projects-panel" id="projects">
+        <h1>My Projects</h1>
+        <button onclick="closeProjects()">Back</button>
+    </div>
+
+    <script src="Script.js"></script>
+</body>
+</html>
