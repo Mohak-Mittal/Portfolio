@@ -1,51 +1,473 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Mohak | Game Developer</title>
-    <link rel="stylesheet" href="Style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mohak Mittal — Game Developer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-    <!-- BACKGROUND WAVES -->
-    <div class="stars">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-     </div>
-    <div class="waves">
-  <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
-    <path fill="#6a00ff" fill-opacity="0.5"
-      d="M0,160L60,176C120,192,240,224,360,224C480,224,600,192,720,176C840,160,960,160,1080,176C1200,192,1320,224,1380,240L1440,256V320H0Z">
-    </path>
-
-    <path fill="#00eaff" fill-opacity="0.4"
-      d="M0,192L60,186C120,180,240,168,360,160C480,152,600,148,720,160C840,172,960,200,1080,208C1200,216,1320,204,1380,198L1440,192V320H0Z">
-    </path>
-  </svg>
-</div>
-
-    <!-- MAIN CONTENT -->
-    <section class="hero" id="main">
-        <div class="content">
-            <h1>Hi, I'm Mohak 👋</h1>
-            <h2>Game Developer</h2>
-            <p>I build immersive experiences using Unreal Engine & Blender.</p>
-            <button onclick="openProjects()">View My Work</button>
+ 
+  <canvas id="particles"></canvas>
+  <div class="cursor-glow" id="cursorGlow"></div>
+ 
+  <!-- ============================================================
+       PROJECT MODAL — small popup with image carousel
+  ============================================================ -->
+  <div class="project-modal" id="projectModal">
+    <div class="modal-inner">
+      <button class="modal-close" id="modalClose">✕</button>
+ 
+      <div class="modal-header">
+        <div class="modal-tags">
+          <span>UE5</span>
+          <span>Open World</span>
         </div>
-
-        <div class="image">
-            <img src="photo.jpg" alt="Mohak">
+        <h2 class="modal-title">Project Title One</h2>
+        <p class="modal-subtitle">Unreal Engine 5 · Blender · C++</p>
+      </div>
+ 
+      <!-- =====================================================
+           IMAGE CAROUSEL
+           To add images: add <img> tags inside .carousel-track
+           Each <img> becomes one slide.
+           Example:
+             <img src="screenshot1.jpg" alt="Level Design"    class="carousel-img" />
+             <img src="screenshot2.jpg" alt="Character Model" class="carousel-img" />
+             <img src="screenshot3.jpg" alt="VFX"             class="carousel-img" />
+             <img src="screenshot4.jpg" alt="UI"              class="carousel-img" />
+      ===================================================== -->
+      <div class="carousel-wrapper">
+        <button class="carousel-btn carousel-prev" id="carouselPrev">&#8592;</button>
+ 
+        <div class="carousel-viewport">
+          <div class="carousel-track" id="carouselTrack">
+ 
+            <!-- ADD YOUR IMAGES HERE — replace src with your filenames -->
+            <img src="screenshot1.png" alt="Screenshot 1" class="carousel-img" />
+            <img src="screenshot2.png" alt="Screenshot 2" class="carousel-img" />
+            <img src="screenshot3.png" alt="Screenshot 3" class="carousel-img" />
+            <img src="screenshot4.png" alt="Screenshot 4" class="carousel-img" />
+ 
+            <!-- PLACEHOLDER shown if images not found (remove once you add real images) -->
+            <!-- <div class="carousel-placeholder">📸 Add images above</div> -->
+ 
+          </div>
         </div>
-    </section>
-
-    <!-- POPUP PROJECT PANEL -->
-    <div class="projects-panel" id="projects">
-        <h1>My Projects</h1>
-        <button onclick="closeProjects()">Back</button>
+ 
+        <button class="carousel-btn carousel-next" id="carouselNext">&#8594;</button>
+ 
+        <!-- Dot indicators -->
+        <div class="carousel-dots" id="carouselDots"></div>
+      </div>
+ 
+      <div class="modal-body">
+        <h3 class="modal-section-title">About This Project</h3>
+        <!-- Edit description -->
+        <p class="modal-desc">
+          An open-world adventure built in Unreal Engine 5 using Lumen lighting and Nanite geometry.
+          Features dynamic weather systems, fully destructible environments, and an AI-driven ecosystem.
+          Every asset modeled and textured in Blender with full PBR workflow.
+        </p>
+ 
+        <div class="modal-details">
+          <div class="modal-detail-item">
+            <span class="detail-label">Engine</span>
+            <span class="detail-value">Unreal Engine 5</span>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Tools</span>
+            <span class="detail-value">Blender, Substance Painter</span>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Type</span>
+            <span class="detail-value">Open World / Single Player</span>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">In Development</span>
+          </div>
+        </div>
+ 
+        <div class="modal-links">
+          <!-- This button opens the full project detail page -->
+          <button class="btn-primary" id="viewLiveBtn">
+            <span>View Full Project</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </button>
+          <a href="https://github.com/Mohak-Mittal?tab=repositories" target="_blank" class="btn-secondary">GitHub →</a>
+        </div>
+      </div>
     </div>
-
-    <script src="Script.js"></script>
+  </div>
+ 
+  <!-- ============================================================
+       PROJECT DETAIL PAGE — full screen, opened from "View Full Project"
+  ============================================================ -->
+  <div class="project-detail-page" id="projectDetailPage">
+    <div class="detail-inner">
+ 
+      <!-- Back button -->
+      <button class="detail-back" id="detailBack">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Projects
+      </button>
+ 
+      <!-- Hero banner -->
+      <div class="detail-hero">
+        <div class="detail-hero-text">
+          <div class="detail-tags">
+            <span>UE5</span><span>Open World</span><span>Blender</span>
+          </div>
+          <!-- Edit project title -->
+          <h1 class="detail-title">Project Title One</h1>
+          <p class="detail-subtitle">Unreal Engine 5 · Blender · C++ · Substance Painter</p>
+        </div>
+      </div>
+ 
+      <div class="detail-content">
+ 
+        <!-- =====================================================
+             FULL VIDEO SECTION
+             → To embed a YouTube video, replace VIDEO_ID below:
+               src="https://www.youtube.com/embed/VIDEO_ID"
+             → To use a local video file instead:
+               <video controls class="detail-video-file">
+                 <source src="your-video.mp4" type="video/mp4" />
+               </video>
+        ===================================================== -->
+        <div class="detail-section">
+          <h2 class="detail-section-title">// Project Video</h2>
+          <div class="detail-video-wrapper">
+ 
+            <!-- YouTube embed — replace VIDEO_ID with your actual YouTube video ID -->
+            <iframe
+              id="projectVideoIframe"
+              src="Video Project 2.mp4"
+              class="detail-video-iframe"
+              allowfullscreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            ></iframe>
+ 
+            <!-- OR: local video file (uncomment and remove iframe above if using local):
+            <video controls class="detail-video-file">
+              <source src="project-video.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            -->
+ 
+          </div>
+        </div>
+ 
+        <!-- Full description -->
+        <div class="detail-section">
+          <h2 class="detail-section-title">// About This Project</h2>
+          <!-- Edit all the text below with your real project details -->
+          <p class="detail-text">
+            Write a full detailed description of your project here. Talk about the concept, the world you built,
+            the story behind it, and what makes it unique. This is your chance to really show off your vision.
+          </p>
+          <p class="detail-text">
+            Describe the challenges you faced and how you solved them. What systems did you build?
+            What did you learn? How long did it take? Make it compelling.
+          </p>
+        </div>
+ 
+        <!-- Features list -->
+        <div class="detail-section">
+          <h2 class="detail-section-title">// Key Features</h2>
+          <div class="detail-features">
+            <!-- Edit these feature items -->
+            <div class="feature-item">
+              <span class="feature-icon">⚡</span>
+              <div>
+                <h4>Lumen Global Illumination</h4>
+                <p>Fully dynamic real-time lighting with UE5 Lumen for photorealistic environments.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🌍</span>
+              <div>
+                <h4>Open World Design</h4>
+                <p>Vast explorable world with dynamic weather, day/night cycle, and living ecosystems.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🤖</span>
+              <div>
+                <h4>Blueprint AI System</h4>
+                <p>Custom-built enemy AI with pathfinding, combat logic, and behaviour trees.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🔷</span>
+              <div>
+                <h4>Custom 3D Assets</h4>
+                <p>Every model sculpted and textured in Blender with full PBR pipeline.</p>
+              </div>
+            </div>
+            <!-- Add more feature-item blocks as needed -->
+          </div>
+        </div>
+ 
+        <!-- Tech stack -->
+        <div class="detail-section">
+          <h2 class="detail-section-title">// Tech Stack</h2>
+          <div class="detail-tech">
+            <span class="detail-tag">Unreal Engine 5</span>
+            <span class="detail-tag">Blueprint</span>
+            <span class="detail-tag">C++</span>
+            <span class="detail-tag">Blender</span>
+            <span class="detail-tag">Substance Painter</span>
+            <span class="detail-tag">Niagara VFX</span>
+            <span class="detail-tag">Lumen</span>
+            <span class="detail-tag">Nanite</span>
+            <!-- Add more tags as needed -->
+          </div>
+        </div>
+ 
+        <!-- All screenshots gallery -->
+        <div class="detail-section">
+          <h2 class="detail-section-title">// Screenshots</h2>
+          <!-- =====================================================
+               SCREENSHOTS GALLERY
+               Add as many images as you want here.
+               They display in a responsive grid.
+               <img src="your-image.jpg" alt="Description" class="gallery-img" />
+          ===================================================== -->
+          <div class="detail-gallery">
+            <img src="Screenshot1.png" alt="Screenshot 1" class="gallery-img" />
+            <img src="Screenshot2.png" alt="Screenshot 2" class="gallery-img" />
+            <img src="Screenshot3.png" alt="Screenshot 3" class="gallery-img" />
+            <img src="Screenshot4.png" alt="Screenshot 4" class="gallery-img" />
+            <!-- Add more screenshots below -->
+          </div>
+        </div>
+ 
+        <!-- Footer links -->
+        <div class="detail-footer-links">
+          <a href="https://github.com/Mohak-Mittal?tab=repositories" target="_blank" class="btn-primary">
+            <span>View on GitHub</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <button class="btn-secondary" id="detailBack2">← Back to Projects</button>
+        </div>
+ 
+      </div><!-- /detail-content -->
+    </div><!-- /detail-inner -->
+  </div><!-- /project-detail-page -->
+ 
+ 
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="nav-logo" data-page="home">
+      <span class="logo-bracket">&lt;</span>
+      <span class="logo-text">MOHAK</span>
+      <span class="logo-accent">DEV</span>
+      <span class="logo-bracket">/&gt;</span>
+    </div>
+    <ul class="nav-links">
+      <li><button class="nav-btn active" data-page="home">Home</button></li>
+      <li><button class="nav-btn" data-page="about">About</button></li>
+      <li><button class="nav-btn" data-page="skills">Skills</button></li>
+      <li><button class="nav-btn" data-page="projects">Projects</button></li>
+      <li><button class="nav-btn" data-page="contact">Contact</button></li>
+    </ul>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Available for work</span>
+    </div>
+    <button class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+ 
+  <!-- PAGE: HOME -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-content">
+        <div class="hero-tag">// Level Select — Choose Your Path</div>
+        <h1 class="hero-title">
+          <span class="line-1">MOHAK</span>
+          <span class="line-2">MITTAL<span class="cursor-blink">_</span></span>
+        </h1>
+        <p class="hero-subtitle" id="typedText"></p>
+        <p class="hero-desc">
+          Building <span class="highlight">immersive worlds</span> with Unreal Engine & sculpting reality in <span class="highlight">Blender</span>. Every pixel, polygon, and particle matters.
+        </p>
+        <div class="hero-cta">
+          <button class="btn-primary" data-page="projects"><span>View My Games</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn-secondary" data-page="contact">Get In Touch</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-num">0+</span><span class="stat-label">Games Built</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><span class="stat-num">0+</span><span class="stat-label">3D Models</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><span class="stat-num">0+</span><span class="stat-label">Years Exp.</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="avatar-ring outer-ring"></div>
+        <div class="avatar-ring mid-ring"></div>
+        <div class="avatar-ring inner-ring"></div>
+        <div class="avatar-box">
+          <!-- photo.jpg must be in same folder as index.html -->
+          <img src="photo.jpg" alt="Mohak Mittal" class="avatar-photo" />
+        </div>
+        <div class="orbit-dot dot-1"></div>
+        <div class="orbit-dot dot-2"></div>
+        <div class="orbit-dot dot-3"></div>
+        <div class="tech-badge badge-ue">UE5</div>
+        <div class="tech-badge badge-bl">Blender</div>
+        <div class="tech-badge badge-cp">C++</div>
+      </div>
+    </div>
+    <div class="quick-nav">
+      <button class="qnav-card" data-page="about"><span class="qnav-icon">👾</span><span class="qnav-label">About Me</span><span class="qnav-arrow">→</span></button>
+      <button class="qnav-card" data-page="skills"><span class="qnav-icon">🎮</span><span class="qnav-label">My Skills</span><span class="qnav-arrow">→</span></button>
+      <button class="qnav-card" data-page="projects"><span class="qnav-icon">🌍</span><span class="qnav-label">Projects</span><span class="qnav-arrow">→</span></button>
+      <button class="qnav-card" data-page="contact"><span class="qnav-icon">📡</span><span class="qnav-label">Contact</span><span class="qnav-arrow">→</span></button>
+    </div>
+  </div>
+ 
+  <!-- PAGE: ABOUT -->
+  <div class="page" id="page-about">
+    <div class="page-inner">
+      <div class="section-header">
+        <span class="section-tag">// 01 — ABOUT</span>
+        <h2 class="section-title">About <span class="accent">Me</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>Hey! I'm <span class="highlight">Mohak Mittal</span>, a passionate <span class="highlight">Game Developer</span> from Barnala, Punjab, India — specializing in Unreal Engine 5 and Blender.</p>
+          <p>Whether it's building complex gameplay systems in <span class="highlight">Blueprint & C++</span>, creating stunning 3D assets in Blender, or optimizing for real-time performance — I live and breathe game development.</p>
+          <p>My goal is to create experiences that players remember long after they put the controller down.</p>
+          <a href="#" class="btn-outline">Download CV</a>
+        </div>
+        <div class="about-cards">
+          <div class="info-card pop-in" style="--delay:0.1s"><div class="card-icon">🎮</div><h3>Game Design</h3><p>Designing engaging gameplay loops, mechanics, and player experiences.</p></div>
+          <div class="info-card pop-in" style="--delay:0.2s"><div class="card-icon">🔷</div><h3>3D Modeling</h3><p>High-poly sculpting and game-ready asset creation in Blender.</p></div>
+          <div class="info-card pop-in" style="--delay:0.3s"><div class="card-icon">⚡</div><h3>Unreal Engine</h3><p>Blueprints, C++, Lumen, Nanite — full UE5 pipeline mastery.</p></div>
+          <div class="info-card pop-in" style="--delay:0.4s"><div class="card-icon">🎨</div><h3>Texturing</h3><p>PBR workflows, Substance Painter, and material creation for realism.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- PAGE: SKILLS -->
+  <div class="page" id="page-skills">
+    <div class="page-inner">
+      <div class="section-header">
+        <span class="section-tag">// 02 — SKILLS</span>
+        <h2 class="section-title">My <span class="accent">Arsenal</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="skills-grid">
+        <div class="skill-category pop-in" style="--delay:0.1s">
+          <h3 class="category-title">🎮 Game Dev</h3>
+          <div class="skill-bars">
+            <div class="skill-item"><div class="skill-info"><span>Unreal Engine 5</span><span class="skill-pct">90%</span></div><div class="skill-bar"><div class="skill-fill" data-width="90"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>Blueprint Scripting</span><span class="skill-pct">88%</span></div><div class="skill-bar"><div class="skill-fill" data-width="88"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>C++ (Unreal)</span><span class="skill-pct">70%</span></div><div class="skill-bar"><div class="skill-fill" data-width="70"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>Game Design</span><span class="skill-pct">85%</span></div><div class="skill-bar"><div class="skill-fill" data-width="85"></div></div></div>
+          </div>
+        </div>
+        <div class="skill-category pop-in" style="--delay:0.2s">
+          <h3 class="category-title">🔷 3D & Art</h3>
+          <div class="skill-bars">
+            <div class="skill-item"><div class="skill-info"><span>Blender</span><span class="skill-pct">92%</span></div><div class="skill-bar"><div class="skill-fill" data-width="92"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>3D Modeling</span><span class="skill-pct">88%</span></div><div class="skill-bar"><div class="skill-fill" data-width="88"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>Sculpting</span><span class="skill-pct">80%</span></div><div class="skill-bar"><div class="skill-fill" data-width="80"></div></div></div>
+            <div class="skill-item"><div class="skill-info"><span>Rigging & Animation</span><span class="skill-pct">72%</span></div><div class="skill-bar"><div class="skill-fill" data-width="72"></div></div></div>
+          </div>
+        </div>
+        <div class="skill-category pop-in" style="--delay:0.3s">
+          <h3 class="category-title">🛠️ Tools & Pipeline</h3>
+          <div class="skill-tags">
+            <span class="tag">UE5 Lumen</span><span class="tag">Nanite</span><span class="tag">MetaHuman</span>
+            <span class="tag">Substance Painter</span><span class="tag">Git / Perforce</span><span class="tag">Niagara VFX</span>
+            <span class="tag">Physics Sim</span><span class="tag">Level Design</span><span class="tag">PBR Texturing</span><span class="tag">UV Unwrapping</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- PAGE: PROJECTS -->
+  <div class="page" id="page-projects">
+    <div class="page-inner projects-centered">
+      <div class="section-header">
+        <span class="section-tag">// 03 — PROJECTS</span>
+        <h2 class="section-title">My <span class="accent">Worlds</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="project-card single-card pop-in" id="openModalBtn" style="--delay:0.15s">
+        <div class="project-number">01</div>
+        <div class="project-content">
+          <div class="project-tags"><span>UE5</span><span>Open World</span></div>
+          <h3>Project Title One</h3>
+          <p>An open-world adventure built in Unreal Engine 5. Click to explore the full project with screenshots and video.</p>
+          <div class="card-cta"><span class="card-cta-text">Click to Explore</span><span class="card-cta-icon">⤢</span></div>
+        </div>
+        <div class="project-glow"></div>
+      </div>
+      <p class="projects-hint">More projects coming soon...</p>
+    </div>
+  </div>
+ 
+  <!-- PAGE: CONTACT -->
+  <div class="page" id="page-contact">
+    <div class="page-inner">
+      <div class="section-header">
+        <span class="section-tag">// 04 — CONTACT</span>
+        <h2 class="section-title">Get In <span class="accent">Touch</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info pop-in" style="--delay:0.1s">
+          <p class="contact-intro">Have a game idea? Need a 3D artist or Unreal developer? Let's connect and build something epic together.</p>
+          <div class="contact-items">
+            <div class="contact-item"><span class="contact-icon">📧</span><span>mohakmittal92@gmail.com</span></div>
+            <div class="contact-item"><span class="contact-icon">📍</span><span>Barnala, Punjab, India</span></div>
+            <div class="contact-item"><span class="contact-icon">📸</span><a href="https://www.instagram.com/mohakmittal92/" target="_blank" style="color:inherit;">@mohakmittal92</a></div>
+            <div class="contact-item"><span class="contact-icon">💻</span><a href="https://github.com/Mohak-Mittal?tab=repositories" target="_blank" style="color:inherit;">github.com/Mohak-Mittal</a></div>
+          </div>
+          <div class="social-links">
+            <a href="https://github.com/Mohak-Mittal?tab=repositories" target="_blank" class="social-btn">GitHub</a>
+            <a href="https://www.instagram.com/mohakmittal92/" target="_blank" class="social-btn">Instagram</a>
+          </div>
+        </div>
+        <form class="contact-form pop-in" id="contactForm" style="--delay:0.2s">
+          <div class="form-group"><input type="text" name="from_name" placeholder="Your Name" class="form-input" required /></div>
+          <div class="form-group"><input type="email" name="from_email" placeholder="Your Email" class="form-input" required /></div>
+          <div class="form-group"><input type="text" name="subject" placeholder="Subject" class="form-input" /></div>
+          <div class="form-group"><textarea name="message" placeholder="Your Message..." rows="5" class="form-input" required></textarea></div>
+          <button type="submit" class="btn-primary full-width" id="sendBtn">
+            <span id="sendBtnText">Send Message</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+          <p id="formStatus" class="form-status"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+ 
+  <footer class="footer">
+    <div class="footer-content">
+      <span class="footer-logo">&lt;Mohak Mittal /&gt;</span>
+      <span class="footer-copy">© 2025 — Game Developer</span>
+      <span class="footer-made">Built with ❤️ & ☕</span>
+    </div>
+  </footer>
+ 
+  <script src="script.js"></script>
 </body>
 </html>
