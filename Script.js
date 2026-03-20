@@ -33,9 +33,9 @@ if (isTouch) {
 // EMAILJS — safely wrapped so it never crashes
 // the rest of the site if keys are missing
 // ============================================
-const EMAILJS_SERVICE_ID  = 'service_15blu5y';
-const EMAILJS_TEMPLATE_ID = 'template_zbpt2qr';
-const EMAILJS_PUBLIC_KEY  = 'Cebhyt0R5eP56EYvW';
+const EMAILJS_SERVICE_ID  = 'service_k7r3n8a';
+const EMAILJS_TEMPLATE_ID = 'template_0xo1ldg';
+const EMAILJS_PUBLIC_KEY  = 'j0Dg8aWpA-ato3ivS';
  
 try {
   if (typeof emailjs !== 'undefined') {
@@ -372,7 +372,7 @@ if (contactForm) {
       from_email: contactForm.from_email.value,
       subject:    contactForm.subject.value || 'Portfolio Contact',
       message:    contactForm.message.value,
-      to_email:   'mohakmittal93@gmail.com',
+      to_email:   'mittalmohak0@gmail.com',
     };
  
     try {
