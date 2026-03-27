@@ -10,6 +10,9 @@
   --neon:      #00f0ff;
   --neon2:     #7b2fff;
   --neon3:     #ff2d78;
+  --neon4:     #006666;
+  --neon5:     #009973;
+  --neon6:     #00ffbb;
   --text:      #e8eaf6;
   --muted:     #6a7799;
   --border:    rgba(0, 240, 255, 0.15);
@@ -120,13 +123,21 @@ ul { list-style: none; }
 .dot-1{background:var(--neon); box-shadow:0 0 12px var(--neon); animation:orbit1 6s linear infinite;}
 .dot-2{background:var(--neon2);box-shadow:0 0 12px var(--neon2);animation:orbit2 9s linear infinite;}
 .dot-3{background:var(--neon3);box-shadow:0 0 12px var(--neon3);animation:orbit3 12s linear infinite;}
+.dot-4{background:var(--neon4); box-shadow:0 0 12px var(--neon4); animation:orbit1 4s linear infinite;}
+.dot-5{background:var(--neon5);box-shadow:0 0 12px var(--neon5);animation:orbit2 11s linear infinite;}
+.dot-6{background:var(--neon6);box-shadow:0 0 12px var(--neon6);animation:orbit3 9s linear infinite;}
 @keyframes orbit1{from{transform:rotate(0deg) translateX(150px) rotate(0deg)}to{transform:rotate(360deg) translateX(150px) rotate(-360deg)}}
 @keyframes orbit2{from{transform:rotate(120deg) translateX(120px) rotate(-120deg)}to{transform:rotate(480deg) translateX(120px) rotate(-480deg)}}
 @keyframes orbit3{from{transform:rotate(240deg) translateX(90px) rotate(-240deg)}to{transform:rotate(600deg) translateX(90px) rotate(-600deg)}}
+@keyframes orbit4{from{transform:rotate(360deg) translateX(270px) rotate(360deg)}to{transform:rotate(720deg) translateX(270px) rotate(-720deg)}}
+@keyframes orbit5{from{transform:rotate(60deg) translateX(300px) rotate(-60deg)}to{transform:rotate(420deg) translateX(300px) rotate(-420deg)}}
+@keyframes orbit6{from{transform:rotate(270deg) translateX(160px) rotate(-270deg)}to{transform:rotate(630deg) translateX(160px) rotate(-630deg)}}
+
 .tech-badge { position:absolute; font-family:var(--font-head); font-size:0.6rem; padding:0.25rem 0.65rem; border-radius:50px; letter-spacing:1px; border:1px solid; animation:float 3s ease-in-out infinite; }
 .badge-ue{top:4%;right:0%;background:rgba(0,240,255,0.1);border-color:rgba(0,240,255,0.3);color:var(--neon);animation-delay:0s}
 .badge-bl{bottom:6%;left:-4%;background:rgba(255,100,20,0.12);border-color:rgba(255,100,20,0.3);color:#ff9555;animation-delay:1s}
 .badge-cp{top:40%;right:-8%;background:rgba(123,47,255,0.12);border-color:rgba(123,47,255,0.3);color:var(--neon2);animation-delay:2s}
+.badge-ch{top:10%;left:-8%;background:rgba(35, 170, 201, 0.302);border-color:rgba(35, 170, 201, 0.302);color:var(--neon5);animation-delay:2s}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
  
 .quick-nav { display:flex; gap:0.8rem; width:100%; max-width:1300px; }
