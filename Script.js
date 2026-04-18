@@ -1,7 +1,3 @@
-/* ============================================
-   PORTFOLIO - script.js
-============================================ */
- 
 // ============================================
 // ANDROID VIEWPORT HEIGHT FIX
 // ============================================
@@ -11,14 +7,12 @@ function setVh() {
 setVh();
 window.addEventListener('resize', setVh);
 window.addEventListener('orientationchange', () => setTimeout(setVh, 200));
- 
- 
+
 // ============================================
 // CURSOR GLOW — desktop only
 // ============================================
 const cursorGlow = document.getElementById('cursorGlow');
 const isTouch    = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
- 
 if (isTouch) {
   cursorGlow.style.display = 'none';
 } else {
@@ -27,16 +21,13 @@ if (isTouch) {
     cursorGlow.style.top  = e.clientY + 'px';
   });
 }
- 
- 
+
 // ============================================
-// EMAILJS — safely wrapped so it never crashes
-// the rest of the site if keys are missing
+// EMAILJS — put your real keys here
 // ============================================
-const EMAILJS_SERVICE_ID  = 'service_k7r3n8a';
-const EMAILJS_TEMPLATE_ID = 'template_0xo1ldg';
-const EMAILJS_PUBLIC_KEY  = 'j0Dg8aWpA-ato3ivS';
- 
+const EMAILJS_SERVICE_ID  = '';   // ← paste your Service ID
+const EMAILJS_TEMPLATE_ID = '';   // ← paste your Template ID
+const EMAILJS_PUBLIC_KEY  = '';   // ← paste your Public Key
 try {
   if (typeof emailjs !== 'undefined') {
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
@@ -44,20 +35,19 @@ try {
 } catch(e) {
   console.warn('EmailJS not loaded:', e);
 }
- 
- 
+
 // ============================================
 // PARTICLE CANVAS
 // ============================================
 const canvas = document.getElementById('particles');
 const ctx    = canvas.getContext('2d');
 let W, H, particles;
- 
+
 function resizeCanvas() {
   W = canvas.width  = window.innerWidth;
   H = canvas.height = window.innerHeight;
 }
- 
+
 function createParticles() {
   particles = [];
   const density = isTouch ? 18000 : 11000;
@@ -74,7 +64,7 @@ function createParticles() {
     });
   }
 }
- 
+
 function animateParticles() {
   ctx.clearRect(0, 0, W, H);
   for (let i = 0; i < particles.length; i++) {
@@ -103,39 +93,33 @@ function animateParticles() {
   });
   requestAnimationFrame(animateParticles);
 }
- 
+
 window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
 resizeCanvas();
 createParticles();
 animateParticles();
- 
- 
+
 // ============================================
-// PAGE NAVIGATION — FADE OUT -> POP IN
+// PAGE NAVIGATION
 // ============================================
 const navBtns     = document.querySelectorAll('.nav-btn');
 let currentPage   = 'home';
 let transitioning = false;
- 
+
 function navigateTo(targetPage) {
   if (targetPage === currentPage || transitioning) return;
   transitioning = true;
- 
   const outPage = document.getElementById('page-' + currentPage);
   const inPage  = document.getElementById('page-' + targetPage);
   if (!outPage || !inPage) { transitioning = false; return; }
- 
   outPage.classList.add('exiting');
- 
   setTimeout(() => {
     outPage.classList.remove('active', 'exiting');
- 
     inPage.querySelectorAll('.pop-in').forEach(el => {
       el.style.animation = 'none';
       el.offsetHeight;
       el.style.animation = '';
     });
- 
     if (targetPage === 'skills') {
       inPage.querySelectorAll('.skill-fill').forEach(f => {
         f.style.transition = 'none';
@@ -145,40 +129,36 @@ function navigateTo(targetPage) {
       });
       setTimeout(triggerSkillBars, 80);
     }
- 
     inPage.classList.add('active', 'entering');
     navBtns.forEach(b => b.classList.toggle('active', b.dataset.page === targetPage));
     currentPage = targetPage;
- 
     setTimeout(() => {
       inPage.classList.remove('entering');
       transitioning = false;
     }, 360);
- 
   }, 190);
 }
- 
+
 document.addEventListener('click', (e) => {
-  if (e.target.closest('.project-modal'))       return;
-  if (e.target.closest('.project-detail-page')) return;
+  if (e.target.closest('.project-modal'))        return;
+  if (e.target.closest('.project-detail-page'))  return;
+  if (e.target.closest('.ue-list-overlay'))       return;
+  if (e.target.closest('.blender-feed-overlay'))  return;
   const el = e.target.closest('[data-page]');
   if (el && el.dataset.page) navigateTo(el.dataset.page);
 });
- 
- 
+
 // ============================================
 // HAMBURGER
 // ============================================
 const hamburger = document.getElementById('hamburger');
 const navMenu   = document.querySelector('.nav-links');
- 
 hamburger.addEventListener('click', (e) => {
   e.stopPropagation();
   navMenu.classList.toggle('open');
 });
 document.addEventListener('click', () => navMenu.classList.remove('open'));
- 
- 
+
 // ============================================
 // IMAGE CAROUSEL
 // ============================================
@@ -186,15 +166,13 @@ const track    = document.getElementById('carouselTrack');
 const dotsWrap = document.getElementById('carouselDots');
 const prevBtn  = document.getElementById('carouselPrev');
 const nextBtn  = document.getElementById('carouselNext');
- 
 let currentSlide = 0;
 let totalSlides  = 0;
- 
+
 function initCarousel() {
   const imgs  = track.querySelectorAll('.carousel-img');
   totalSlides = imgs.length;
   if (totalSlides === 0) return;
- 
   dotsWrap.innerHTML = '';
   imgs.forEach((_, i) => {
     const dot = document.createElement('button');
@@ -203,10 +181,9 @@ function initCarousel() {
     dot.addEventListener('click', () => goToSlide(i));
     dotsWrap.appendChild(dot);
   });
- 
   goToSlide(0);
 }
- 
+
 function goToSlide(index) {
   currentSlide = Math.max(0, Math.min(index, totalSlides - 1));
   track.style.transform = 'translateX(-' + (currentSlide * 100) + '%)';
@@ -214,32 +191,26 @@ function goToSlide(index) {
   prevBtn.disabled = currentSlide === 0;
   nextBtn.disabled = currentSlide === totalSlides - 1;
 }
- 
+
 prevBtn.addEventListener('click', (e) => { e.stopPropagation(); goToSlide(currentSlide - 1); });
 nextBtn.addEventListener('click', (e) => { e.stopPropagation(); goToSlide(currentSlide + 1); });
- 
+
 let touchStartX = 0;
 track.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
 track.addEventListener('touchend',   (e) => {
   const diff = touchStartX - e.changedTouches[0].clientX;
   if (Math.abs(diff) > 40) goToSlide(diff > 0 ? currentSlide + 1 : currentSlide - 1);
 });
- 
- 
+
 // ============================================
 // PROJECT MODAL
 // ============================================
-const modal        = document.getElementById('projectModal');
-const openModalBtn = document.getElementById('openModalBtn');
-const modalClose   = document.getElementById('modalClose');
- 
-openModalBtn.addEventListener('click', () => {
-  modal.classList.add('open');
-  initCarousel();
-});
+const modal      = document.getElementById('projectModal');
+const modalClose = document.getElementById('modalClose');
+
 modalClose.addEventListener('click', (e) => { e.stopPropagation(); closeModal(); });
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
- 
+
 function closeModal() {
   const inner = modal.querySelector('.modal-inner');
   inner.style.transform  = 'scale(0.9)';
@@ -250,8 +221,65 @@ function closeModal() {
     inner.style.transform = inner.style.opacity = inner.style.transition = '';
   }, 230);
 }
- 
- 
+
+// ============================================
+// UNREAL LIST POPUP
+// ============================================
+const ueListOverlay = document.getElementById('ueListOverlay');
+const openUeList    = document.getElementById('openUeList');
+const ueListClose   = document.getElementById('ueListClose');
+const ueProject1    = document.getElementById('ueProject1');
+
+openUeList.addEventListener('click', (e) => {
+  e.stopPropagation();
+  ueListOverlay.classList.add('open');
+});
+ueListClose.addEventListener('click', () => ueListOverlay.classList.remove('open'));
+ueListOverlay.addEventListener('click', (e) => {
+  if (e.target === ueListOverlay) ueListOverlay.classList.remove('open');
+});
+
+ueProject1.addEventListener('click', () => {
+  ueListOverlay.classList.remove('open');
+  setTimeout(() => { modal.classList.add('open'); initCarousel(); }, 250);
+});
+
+// ============================================
+// BLENDER FEED POPUP
+// ============================================
+const blenderFeedOverlay = document.getElementById('blenderFeedOverlay');
+const openBlenderFeed    = document.getElementById('openBlenderFeed');
+const blenderFeedClose   = document.getElementById('blenderFeedClose');
+
+openBlenderFeed.addEventListener('click', (e) => {
+  e.stopPropagation();
+  blenderFeedOverlay.classList.add('open');
+  document.getElementById('blenderFeedScroll').scrollTop = 0;
+});
+blenderFeedClose.addEventListener('click', () => blenderFeedOverlay.classList.remove('open'));
+
+// ============================================
+// LIKE BUTTON — fully fixed
+// ============================================
+function toggleLike(btnId, countId) {
+  const btn   = document.getElementById(btnId);
+  const count = document.getElementById(countId);
+  if (!btn || !count) return;
+
+  const isNowLiked = btn.classList.toggle('liked');
+  const current    = parseInt(count.textContent) || 0;
+  count.textContent = isNowLiked ? current + 1 : Math.max(0, current - 1);
+
+  const path = btn.querySelector('path');
+  if (path) {
+    path.style.fill   = isNowLiked ? '#ff2d78' : 'none';
+    path.style.stroke = '#ff2d78';
+  }
+
+  btn.style.transform = 'scale(1.3)';
+  setTimeout(() => { btn.style.transform = 'scale(1)'; }, 150);
+}
+
 // ============================================
 // PROJECT DETAIL PAGE
 // ============================================
@@ -259,16 +287,13 @@ const detailPage  = document.getElementById('projectDetailPage');
 const viewLiveBtn = document.getElementById('viewLiveBtn');
 const detailBack  = document.getElementById('detailBack');
 const detailBack2 = document.getElementById('detailBack2');
- 
+
 viewLiveBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   closeModal();
-  setTimeout(() => {
-    detailPage.classList.add('open');
-    detailPage.scrollTop = 0;
-  }, 260);
+  setTimeout(() => { detailPage.classList.add('open'); detailPage.scrollTop = 0; }, 260);
 });
- 
+
 function closeDetailPage() {
   detailPage.classList.remove('open');
   const iframe = document.getElementById('projectVideoIframe');
@@ -278,11 +303,10 @@ function closeDetailPage() {
     setTimeout(() => { iframe.src = src; }, 100);
   }
 }
- 
+
 detailBack.addEventListener('click',  closeDetailPage);
 detailBack2.addEventListener('click', closeDetailPage);
- 
- 
+
 // ============================================
 // KEYBOARD SHORTCUTS
 // ============================================
@@ -292,16 +316,18 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
   }
   if (e.key === 'Escape') {
-    if (detailPage.classList.contains('open')) { closeDetailPage(); return; }
-    if (modal.classList.contains('open'))      { closeModal();      return; }
+    if (detailPage.classList.contains('open'))           { closeDetailPage(); return; }
+    if (modal.classList.contains('open'))                { closeModal();      return; }
+    if (ueListOverlay.classList.contains('open'))        { ueListOverlay.classList.remove('open'); return; }
+    if (blenderFeedOverlay.classList.contains('open'))   { blenderFeedOverlay.classList.remove('open'); return; }
   }
-  if (!modal.classList.contains('open') && !detailPage.classList.contains('open')) {
+  if (!modal.classList.contains('open') && !detailPage.classList.contains('open') &&
+      !ueListOverlay.classList.contains('open') && !blenderFeedOverlay.classList.contains('open')) {
     const map = { '1':'home','2':'about','3':'skills','4':'projects','5':'contact' };
     if (map[e.key]) navigateTo(map[e.key]);
   }
 });
- 
- 
+
 // ============================================
 // PROJECT CARD MOUSE GLOW
 // ============================================
@@ -314,16 +340,14 @@ document.querySelectorAll('.project-card').forEach(card => {
     if (g) g.style.background = 'radial-gradient(circle at ' + x + '% ' + y + '%, rgba(0,240,255,0.09) 0%, transparent 58%)';
   });
 });
- 
- 
+
 // ============================================
 // SKILL BARS
 // ============================================
 function triggerSkillBars() {
   document.querySelectorAll('.skill-fill').forEach(f => { f.style.width = f.dataset.width + '%'; });
 }
- 
- 
+
 // ============================================
 // TYPING EFFECT
 // ============================================
@@ -336,7 +360,7 @@ const phrases = [
 ];
 let phraseIdx = 0, charIdx = 0, deleting = false;
 const typedEl = document.getElementById('typedText');
- 
+
 function type() {
   const c = phrases[phraseIdx];
   if (!deleting) {
@@ -349,8 +373,7 @@ function type() {
   setTimeout(type, deleting ? 42 : 82);
 }
 setTimeout(type, 800);
- 
- 
+
 // ============================================
 // CONTACT FORM
 // ============================================
@@ -358,7 +381,7 @@ const contactForm = document.getElementById('contactForm');
 const sendBtn     = document.getElementById('sendBtn');
 const sendBtnText = document.getElementById('sendBtnText');
 const formStatus  = document.getElementById('formStatus');
- 
+
 if (contactForm) {
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -366,7 +389,6 @@ if (contactForm) {
     sendBtnText.textContent = 'Sending...';
     formStatus.textContent  = '';
     formStatus.className    = 'form-status';
- 
     const params = {
       from_name:  contactForm.from_name.value,
       from_email: contactForm.from_email.value,
@@ -374,7 +396,6 @@ if (contactForm) {
       message:    contactForm.message.value,
       to_email:   'mittalmohak0@gmail.com',
     };
- 
     try {
       if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
@@ -392,7 +413,7 @@ if (contactForm) {
     } catch (err) {
       sendBtnText.textContent  = 'Failed - Try Again';
       sendBtn.style.background = 'linear-gradient(135deg,#ff2d78,#ff6b35)';
-      formStatus.textContent   = 'Something went wrong. Email: mohakmittal93@gmail.com';
+      formStatus.textContent   = 'Something went wrong. Email: mittalmohak0@gmail.com';
       formStatus.className     = 'form-status error';
       sendBtn.disabled         = false;
       setTimeout(() => {
@@ -403,8 +424,7 @@ if (contactForm) {
     }
   });
 }
- 
- 
+
 // ============================================
 // GLOW PULSE
 // ============================================
