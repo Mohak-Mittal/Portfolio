@@ -25,9 +25,9 @@ if (isTouch) {
 // ============================================
 // EMAILJS — put your real keys here
 // ============================================
-const EMAILJS_SERVICE_ID  = '';   // ← paste your Service ID
-const EMAILJS_TEMPLATE_ID = '';   // ← paste your Template ID
-const EMAILJS_PUBLIC_KEY  = '';   // ← paste your Public Key
+const EMAILJS_SERVICE_ID  = 'service_k7r3n8a';
+const EMAILJS_TEMPLATE_ID = 'template_0xo1ldg';
+const EMAILJS_PUBLIC_KEY  = 'j0Dg8aWpA-ato3ivS';
 try {
   if (typeof emailjs !== 'undefined') {
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
