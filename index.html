@@ -791,7 +791,7 @@
 							Whether it's building complex gameplay systems in <span class="highlight">Blueprint & C++</span>, creating stunning 3D assets in Blender, or optimizing for real-time performance — I live and breathe game development.
 						</p>
 						<p>My goal is to create experiences that players remember long after they put the controller down.</p>
-						<a href="#" class="btn-outline">Download CV</a>
+						<a href="Mohak-Mittal-CV.pdf" download="Mohak-Mittal-CV.pdf" class="btn-outline">Download CV</a>
 					</div>
 					<div class="about-cards">
 						<div class="info-card pop-in" style="--delay:0.1s">
@@ -1029,7 +1029,7 @@
 						<div class="contact-items">
 							<div class="contact-item">
 								<span class="contact-icon">📧</span>
-								<span>mittalmohak0@gmail.com</span>
+								<span>[Gmail&#160;protected]</span>
 							</div>
 							<div class="contact-item">
 								<span class="contact-icon">📍</span>
@@ -1083,5 +1083,53 @@
 		</footer>
 
 		<script src="Script.js"></script>
+		<script src="voice-assistant.js"></script>
+
+		<!-- ARIA Robot Assistant Button -->
+		<div id="ariaBtn" title="Talk to ARIA">
+			<svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<line x1="32" y1="6" x2="32" y2="14" stroke="#00f0ff" stroke-width="3" stroke-linecap="round"/>
+				<circle cx="32" cy="5" r="3" fill="#00f0ff"/>
+				<rect x="12" y="14" width="40" height="28" rx="8" fill="#0a0f1e" stroke="#00f0ff" stroke-width="2"/>
+				<circle cx="23" cy="26" r="5" fill="#00f0ff" opacity="0.15"/>
+				<circle cx="23" cy="26" r="3" fill="#00f0ff"/>
+				<circle cx="41" cy="26" r="5" fill="#00f0ff" opacity="0.15"/>
+				<circle cx="41" cy="26" r="3" fill="#00f0ff"/>
+				<rect x="22" y="34" width="20" height="4" rx="2" fill="#00f0ff" opacity="0.6"/>
+				<rect x="7" y="22" width="5" height="12" rx="2" fill="#00f0ff" opacity="0.5"/>
+				<rect x="52" y="22" width="5" height="12" rx="2" fill="#00f0ff" opacity="0.5"/>
+				<rect x="22" y="42" width="20" height="6" rx="3" fill="#00f0ff" opacity="0.2"/>
+			</svg>
+			<span class="aria-label">ARIA</span>
+		</div>
+
+		<!-- ARIA Panel -->
+		<div id="ariaPanel">
+			<div id="ariaPanelHeader">
+				<div id="ariaPanelTitle">
+					<div id="ariaStatusDot"></div>
+					<span>ARIA — Portfolio Assistant</span>
+				</div>
+				<button id="ariaPanelClose">✕</button>
+			</div>
+			<div id="ariaChatBox">
+				<div class="aria-msg aria-msg-bot">
+					<span>
+						Hey! I'm <strong>ARIA</strong> 👋 — Mohak's personal portfolio assistant. Click the mic and ask me anything about him!
+					</span>
+				</div>
+			</div>
+			<div id="ariaInputRow">
+				<button id="ariaMicBtn" title="Tap to speak">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<rect x="9" y="2" width="6" height="11" rx="3"/>
+						<path d="M5 10a7 7 0 0 0 14 0"/>
+						<line x1="12" y1="19" x2="12" y2="23"/>
+						<line x1="8" y1="23" x2="16" y2="23"/>
+					</svg>
+				</button>
+				<span id="ariaHint">Tap mic &amp; speak</span>
+			</div>
+		</div>
 	</body>
 </html>
