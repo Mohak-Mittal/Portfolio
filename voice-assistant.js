@@ -1,14 +1,13 @@
 /* ============================================================
-   ARIA — Mohak's Portfolio Voice Assistant
-   No API key required | Uses Web Speech API (Chrome/Edge)
+   ARIA — Mohak Mittal's Portfolio Assistant v2.0
+   Smart keyword engine | No API key required
    ============================================================ */
 
 (function () {
 
-  /* ── Inject Styles ── */
+  /* ── Styles ── */
   const style = document.createElement('style');
   style.textContent = `
-
     #ariaBtn {
       position: fixed !important;
       top: 80px !important;
@@ -30,16 +29,12 @@
       user-select: none;
       pointer-events: all !important;
     }
-    #ariaBtn:hover {
-      box-shadow: 0 0 30px rgba(0,240,255,0.55), 0 8px 32px rgba(0,0,0,0.7);
-    }
+    #ariaBtn:hover { box-shadow: 0 0 30px rgba(0,240,255,0.55), 0 8px 32px rgba(0,0,0,0.7); }
     #ariaBtn:active { opacity: 0.8; }
     .aria-label {
       font-family: 'Orbitron', monospace, sans-serif;
-      font-size: 10px;
-      color: #00f0ff;
-      letter-spacing: 2px;
-      font-weight: 700;
+      font-size: 10px; color: #00f0ff;
+      letter-spacing: 2px; font-weight: 700;
     }
     @keyframes ariaFloat {
       0%, 100% { transform: translateY(0px); }
@@ -51,7 +46,7 @@
       top: 185px !important;
       right: 20px !important;
       z-index: 99998 !important;
-      width: 320px;
+      width: 330px;
       background: rgba(5, 8, 16, 0.97);
       border: 1.5px solid #00f0ff;
       border-radius: 16px;
@@ -73,60 +68,38 @@
     }
 
     #ariaPanelHeader {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
       padding: 12px 16px;
       border-bottom: 1px solid rgba(0,240,255,0.15);
       background: rgba(0,240,255,0.04);
     }
     #ariaPanelTitle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: flex; align-items: center; gap: 8px;
       font-family: 'Orbitron', monospace, sans-serif;
-      font-size: 11px;
-      color: #00f0ff;
-      letter-spacing: 1px;
-      font-weight: 700;
+      font-size: 11px; color: #00f0ff;
+      letter-spacing: 1px; font-weight: 700;
     }
     #ariaStatusDot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #00f0ff;
-      box-shadow: 0 0 8px #00f0ff;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #00f0ff; box-shadow: 0 0 8px #00f0ff;
       animation: ariaPulse 1.5s ease-in-out infinite;
     }
-    #ariaStatusDot.aria-listening {
-      background: #ff4444 !important;
-      box-shadow: 0 0 12px #ff4444 !important;
-    }
-    @keyframes ariaPulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.35; }
-    }
+    #ariaStatusDot.aria-listening { background: #ff4444 !important; box-shadow: 0 0 12px #ff4444 !important; }
+    @keyframes ariaPulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
     #ariaPanelClose {
-      background: none;
-      border: none;
-      color: rgba(0,240,255,0.5);
-      font-size: 18px;
-      cursor: pointer;
-      padding: 2px 8px;
-      border-radius: 4px;
-      transition: color 0.2s;
-      line-height: 1;
+      background: none; border: none;
+      color: rgba(0,240,255,0.5); font-size: 18px;
+      cursor: pointer; padding: 2px 8px;
+      border-radius: 4px; transition: color 0.2s; line-height: 1;
     }
     #ariaPanelClose:hover { color: #00f0ff; }
 
     #ariaChatBox {
-      flex: 1;
-      max-height: 250px;
-      overflow-y: auto;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex: 1; max-height: 280px; overflow-y: auto;
+      padding: 14px; display: flex;
+      flex-direction: column; gap: 10px;
       scrollbar-width: thin;
       scrollbar-color: rgba(0,240,255,0.3) transparent;
     }
@@ -134,12 +107,9 @@
     #ariaChatBox::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.3); border-radius: 4px; }
 
     .aria-msg {
-      max-width: 90%;
-      padding: 9px 13px;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1.5;
-      color: #c8d8e8;
+      max-width: 92%; padding: 10px 14px;
+      border-radius: 12px; font-size: 14px;
+      line-height: 1.55; color: #c8d8e8;
       animation: msgIn 0.25s ease both;
     }
     @keyframes msgIn {
@@ -155,55 +125,74 @@
     .aria-msg-user {
       background: rgba(255,112,67,0.1);
       border: 1px solid rgba(255,112,67,0.22);
-      color: #ffccbb;
-      align-self: flex-end;
+      color: #ffccbb; align-self: flex-end;
       border-bottom-right-radius: 4px;
     }
     .aria-msg strong { color: #00f0ff; }
 
+    /* Typing indicator */
+    .aria-typing {
+      display: flex; align-items: center; gap: 5px;
+      padding: 12px 16px;
+      background: rgba(0,240,255,0.07);
+      border: 1px solid rgba(0,240,255,0.18);
+      border-radius: 12px; border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .aria-typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #00f0ff; display: inline-block;
+      animation: typingDot 1.2s ease-in-out infinite;
+    }
+    .aria-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .aria-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30%          { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Suggestion chips */
+    #ariaSuggestions {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 8px 14px 0;
+    }
+    .aria-chip {
+      font-size: 11px; padding: 4px 10px;
+      border: 1px solid rgba(0,240,255,0.3);
+      border-radius: 20px; color: rgba(0,240,255,0.7);
+      cursor: pointer; background: rgba(0,240,255,0.05);
+      transition: all 0.2s; white-space: nowrap;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    .aria-chip:hover {
+      background: rgba(0,240,255,0.15);
+      color: #00f0ff; border-color: #00f0ff;
+    }
+
     #ariaInputRow {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
       padding: 12px 16px;
       border-top: 1px solid rgba(0,240,255,0.12);
       background: rgba(0,240,255,0.03);
     }
     #ariaMicBtn {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
+      width: 44px; height: 44px; min-width: 44px;
       border-radius: 50%;
       border: 2px solid #00f0ff;
       background: rgba(0,240,255,0.08);
-      color: #00f0ff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      color: #00f0ff; display: flex;
+      align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s ease;
     }
-    #ariaMicBtn:hover {
-      background: rgba(0,240,255,0.18);
-      box-shadow: 0 0 16px rgba(0,240,255,0.4);
-    }
+    #ariaMicBtn:hover { background: rgba(0,240,255,0.18); box-shadow: 0 0 16px rgba(0,240,255,0.4); }
     #ariaMicBtn.aria-listening {
       background: rgba(255,68,68,0.15) !important;
-      border-color: #ff4444 !important;
-      color: #ff4444 !important;
+      border-color: #ff4444 !important; color: #ff4444 !important;
       box-shadow: 0 0 20px rgba(255,68,68,0.5) !important;
       animation: micPulse 0.8s ease-in-out infinite;
     }
-    @keyframes micPulse {
-      0%, 100% { transform: scale(1); }
-      50%       { transform: scale(1.12); }
-    }
-    #ariaHint {
-      font-size: 13px;
-      color: rgba(0,240,255,0.5);
-      font-family: 'Rajdhani', sans-serif;
-      letter-spacing: 0.5px;
-    }
+    @keyframes micPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.12);} }
+    #ariaHint { font-size: 13px; color: rgba(0,240,255,0.5); font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; }
 
     @media (max-width: 420px) {
       #ariaPanel { width: calc(100vw - 20px); right: 10px !important; }
@@ -212,88 +201,257 @@
   `;
   document.head.appendChild(style);
 
-  /* ── Q&A Knowledge Base ── */
-  const qa = [
+  /* ══════════════════════════════════════════════════
+     KNOWLEDGE BASE — weighted topics with variants
+  ══════════════════════════════════════════════════ */
+  const knowledge = [
     {
-      keys: ['who are you', 'what are you', 'introduce yourself', 'your name', 'aria'],
-      answer: "I'm ARIA — Mohak's AI Portfolio Assistant! Ask me about his skills, projects, education, or how to reach him!"
+      id: 'intro',
+      weight: 10,
+      keys: ['who are you','what are you','introduce','your name','about aria','what is aria','are you ai','are you a bot'],
+      variants: [
+        "I'm <strong>ARIA</strong> — Mohak Mittal's personal portfolio assistant. I'm here to tell you everything about his work, skills, and projects. What would you like to know?",
+        "The name's <strong>ARIA</strong> — think of me as Mohak's digital representative. I can walk you through his skills, projects, experience, and how to reach him. Ask away!",
+      ]
     },
     {
-      keys: ['who is mohak', 'about mohak', 'tell me about him', 'about him'],
-      answer: "Mohak Mittal is a passionate Game Developer from Barnala, Punjab, India. He's a BCA student specializing in Unreal Engine 5 and Blender. His dream is to build his own game studio!"
+      id: 'about',
+      weight: 9,
+      keys: ['who is mohak','about mohak','tell me about him','about him','who is he','background','himself'],
+      variants: [
+        "Mohak Mittal is a passionate <strong>Game Developer</strong> from Barnala, Punjab, India. He specializes in <strong>Unreal Engine 5</strong> and <strong>Blender</strong>, and his core ambition is to build his own game studio from the ground up.",
+        "Mohak is a driven developer and 3D artist from India, currently in his final semester of BCA. He lives and breathes game development — from crafting gameplay systems in C++ and Blueprint to sculpting photorealistic 3D environments in Blender.",
+      ]
     },
     {
-      keys: ['skill', 'know', 'technology', 'stack', 'tech', 'language', 'can he'],
-      answer: "Mohak's skills include Unreal Engine 5, Blueprint Scripting, C++, Blender 3D, Python, Java, HTML and CSS. He's especially strong in 3D modeling, PBR texturing, and UE5's Lumen and Nanite systems."
+      id: 'skills',
+      weight: 8,
+      keys: ['skill','what can he do','technology','stack','tech','language','expertise','proficient','good at','capable','know','tools'],
+      variants: [
+        "Mohak's arsenal includes <strong>Unreal Engine 5</strong>, <strong>Blueprint Scripting</strong>, <strong>C++</strong>, <strong>Blender</strong>, Python, Java, HTML, and CSS. He's especially sharp in real-time 3D pipelines — Lumen lighting, Nanite geometry, Niagara VFX, and PBR texturing workflows.",
+        "On the game dev side: UE5, Blueprint, C++, Lumen, Nanite, and Niagara VFX. On the art side: Blender, 3D modeling, UV unwrapping, and full PBR texturing. He also codes in Python, Java, and web technologies.",
+      ]
     },
     {
-      keys: ['project', 'work', 'built', 'made', 'portfolio', 'what has he'],
-      answer: "Mohak built a Checkpoint Car Game in Unreal Engine 5 with Lumen lighting and custom Blender 3D assets. He also built ARIA — an AI voice assistant using Python, Groq Whisper, and Llama 3.3!"
+      id: 'projects',
+      weight: 8,
+      keys: ['project','work','built','made','portfolio','what has he done','show me','his work','games','creations'],
+      variants: [
+        "Mohak's flagship project is a <strong>Checkpoint Car Game</strong> built in Unreal Engine 5 — a full open-world driving experience with Lumen lighting, Nanite geometry, and every 3D asset hand-crafted in Blender. He's also built <strong>ARIA</strong> (that's me!), a Python AI voice assistant using Groq Whisper and Llama 3.3.",
+        "Two standout projects: first, an <strong>open-world car game</strong> in UE5 featuring a timer-based checkpoint system, dynamic weather, and custom Blender assets. Second, a <strong>Python AI assistant</strong> with voice recognition, Llama 3.3 as the brain, and screen control capabilities.",
+      ]
     },
     {
-      keys: ['car game', 'checkpoint', 'ue5 game', 'unreal game', 'racing'],
-      answer: "The Checkpoint Car Game is Mohak's BCA final project. Built in UE5 with a timer system, checkpoints, Blueprint scripting, Lumen lighting, and fully custom Blender-made assets."
+      id: 'cargame',
+      weight: 9,
+      keys: ['car game','checkpoint','ue5 game','unreal game','racing game','driving','timer','checkpoint game'],
+      variants: [
+        "The <strong>Checkpoint Car Game</strong> is Mohak's BCA final semester project. Built entirely in Unreal Engine 5, it features a real-time timer system, checkpoint-based rewards (+10s per checkpoint), Blueprint visual scripting for game logic, Lumen global illumination, and every building and environment asset modeled from scratch in Blender.",
+        "It's an open-world driving game where you race against the clock through checkpoints. What makes it impressive is the full pipeline — from Blueprint scripting and Lumen lighting in UE5, to custom FBX assets exported from Blender. A complete solo production.",
+      ]
     },
     {
-      keys: ['blender', '3d', 'model', 'render', 'sculpt', 'asset'],
-      answer: "Mohak has 150+ 3D models in Blender — environments and game-ready assets with full PBR texturing. Every asset in his car game was made entirely in Blender!"
+      id: 'blender',
+      weight: 7,
+      keys: ['blender','3d','model','render','sculpt','asset','geometry','mesh','texture','pbr','uv'],
+      variants: [
+        "Mohak has crafted <strong>150+ 3D models</strong> in Blender — architectural assets, environmental props, and game-ready meshes, all UV-unwrapped and textured with a full PBR workflow. Every single asset in his car game was built in Blender from scratch.",
+        "Blender is one of Mohak's strongest tools. He works with high-poly sculpting, UV unwrapping, PBR material creation, and the FBX export pipeline into Unreal Engine. Over 150 models in his portfolio so far.",
+      ]
     },
     {
-      keys: ['python', 'voice assistant', 'ai project', 'groq'],
-      answer: "Mohak built an AI voice assistant using Groq's Whisper API for speech recognition, Llama 3.3 70B as the AI brain, and features like file indexing and screen control. Pretty impressive!"
+      id: 'aria_project',
+      weight: 8,
+      keys: ['python project','voice assistant','ai assistant','groq','llama','whisper','aria project','your origin','how were you made'],
+      variants: [
+        "Mohak built an <strong>AI voice assistant</strong> in Python using Groq's Whisper API for speech recognition, Llama 3.3 70B as the intelligence layer, and pyttsx3 for text-to-speech. It also features file system indexing and screen control capabilities — a genuinely impressive standalone project.",
+        "The ARIA project uses a real-time pipeline: voice input → Whisper transcription → Llama 3.3 processing → spoken response. Mohak built it entirely in Python with added features like file indexing and OS-level screen interaction.",
+      ]
     },
     {
-      keys: ['contact', 'hire', 'reach', 'email', 'connect', 'collaborate', 'get in touch'],
-      answer: "Reach Mohak on Instagram at @mohakmittal92, or find his work on GitHub at github.com/Mohak-Mittal. He's open to game dev projects and freelance work!"
+      id: 'contact',
+      weight: 8,
+      keys: ['contact','hire','reach','connect','collaborate','work together','get in touch','available','freelance','opportunity'],
+      variants: [
+        "Mohak is open to collaborations, freelance projects, and game development opportunities. You can find him on <strong>Instagram @mohakmittal92</strong> or explore his code on <strong>GitHub at github.com/Mohak-Mittal</strong>. Don't hesitate — he'd love to hear from you!",
+        "The best way to reach Mohak is via <strong>Instagram (@mohakmittal92)</strong> or <strong>GitHub (github.com/Mohak-Mittal)</strong>. He's actively looking for collaborations and interesting projects to contribute to.",
+      ]
     },
     {
-      keys: ['github', 'code', 'repository', 'repo'],
-      answer: "Mohak's GitHub is github.com/Mohak-Mittal — check it out for his projects and code!"
+      id: 'github',
+      weight: 6,
+      keys: ['github','repository','repo','code','open source','source code'],
+      variants: [
+        "Mohak's GitHub is <strong>github.com/Mohak-Mittal</strong> — head over there to see his repositories and code in action.",
+        "You'll find Mohak's projects and repositories at <strong>github.com/Mohak-Mittal</strong>. Worth a visit!",
+      ]
     },
     {
-      keys: ['instagram', 'social', 'insta', 'follow'],
-      answer: "Follow Mohak on Instagram at @mohakmittal92 for his latest 3D renders and game dev updates!"
+      id: 'instagram',
+      weight: 6,
+      keys: ['instagram','social media','insta','follow','social'],
+      variants: [
+        "Follow Mohak on Instagram at <strong>@mohakmittal92</strong> for his latest 3D renders, game dev updates, and creative work.",
+        "His Instagram handle is <strong>@mohakmittal92</strong> — a good place to see his visual work and stay updated on new projects.",
+      ]
     },
     {
-      keys: ['location', 'where', 'from', 'city', 'india', 'barnala'],
-      answer: "Mohak is based in Barnala, Punjab, India. Currently in his 6th semester of BCA."
+      id: 'location',
+      weight: 5,
+      keys: ['location','where','from','city','country','india','barnala','punjab','based'],
+      variants: [
+        "Mohak is based in <strong>Barnala, Punjab, India</strong>. He's currently in his final semester of BCA and available for remote collaborations.",
+        "He's from <strong>Barnala, Punjab, India</strong> — a dedicated developer building world-class work from a small city.",
+      ]
     },
     {
-      keys: ['education', 'study', 'college', 'degree', 'bca', 'university', 'student'],
-      answer: "Mohak is pursuing a BCA at S.D. College Barnala, affiliated with Punjabi University Patiala. He's in his final 6th semester!"
+      id: 'education',
+      weight: 6,
+      keys: ['education','study','college','degree','bca','university','student','qualification','academic'],
+      variants: [
+        "Mohak is pursuing a <strong>Bachelor of Computer Applications (BCA)</strong> at S.D. College Barnala, affiliated with Punjabi University Patiala. He's currently in his 6th and final semester.",
+        "He's finishing a <strong>BCA degree</strong> at S.D. College Barnala under Punjabi University Patiala — final semester, and already building professional-level projects.",
+      ]
     },
     {
-      keys: ['goal', 'dream', 'future', 'plan', 'studio', 'ambition'],
-      answer: "Mohak's ultimate goal is to found his own game studio! He's mastering Unreal Engine 5 and C++ to make that dream happen."
+      id: 'goal',
+      weight: 7,
+      keys: ['goal','dream','future','plan','studio','ambition','vision','where is he headed','aspiration'],
+      variants: [
+        "Mohak's ultimate vision is to <strong>found his own game studio</strong>. He's systematically building expertise in Unreal Engine 5 and C++ — the exact tools used by the world's top studios — to make that a reality.",
+        "The long-term goal is crystal clear: <strong>his own game studio</strong>. Every project he builds, every skill he sharpens in UE5 and C++, is a step toward that dream.",
+      ]
     },
     {
-      keys: ['experience', 'year', 'how long'],
-      answer: "Mohak has been actively developing games and 3D art for over a year, shipping real projects with UE5, Blender, Niagara VFX, and Blueprint scripting."
+      id: 'experience',
+      weight: 6,
+      keys: ['experience','how long','since when','years','beginner','expert','level'],
+      variants: [
+        "Mohak has been actively building in game development and 3D art for over a year — shipping real, complete projects using Unreal Engine 5, Blender, Niagara VFX, Lumen, and Blueprint scripting.",
+        "Over a year of hands-on experience, with tangible outputs: a shipped UE5 game, 150+ Blender models, and a functional AI assistant. He learns by building.",
+      ]
     },
     {
-      keys: ['cv', 'resume', 'download'],
-      answer: "Download Mohak's CV using the Download CV button on the About page. It has his skills, projects and contact info!"
+      id: 'cv',
+      weight: 5,
+      keys: ['cv','resume','download','curriculum vitae'],
+      variants: [
+        "You can grab Mohak's CV directly from the <strong>About section</strong> of this portfolio — just hit the Download CV button. It covers his full skill set, projects, and contact details.",
+        "The Download CV button on the About page has everything — his skills, projects, education, and contact info, neatly packaged.",
+      ]
     },
     {
-      keys: ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening'],
-      answer: "Hey there! I'm ARIA, Mohak's portfolio assistant. Ask me about his skills, projects, or how to get in touch. I'm all ears — literally!"
+      id: 'ue5',
+      weight: 7,
+      keys: ['unreal engine','ue5','unreal','lumen','nanite','niagara','blueprint'],
+      variants: [
+        "Mohak works extensively with <strong>Unreal Engine 5</strong> — using Lumen for real-time global illumination, Nanite for virtualized geometry, Niagara for VFX systems, and Blueprint Visual Scripting for gameplay logic. C++ for deeper engine work.",
+        "In UE5, Mohak handles the full pipeline: Blueprint scripting, Lumen lighting, Nanite meshes, Niagara particle effects, and the FBX asset import workflow from Blender. A complete end-to-end developer.",
+      ]
     },
     {
-      keys: ['help', 'what can you', 'what do you know', 'what can i ask'],
-      answer: "I can answer questions about Mohak's skills, projects, education, and contact info. Try: 'What are his skills?' or 'Tell me about his game!'"
+      id: 'cplusplus',
+      weight: 6,
+      keys: ['c++','cpp','programming','code','coding','developer','software'],
+      variants: [
+        "C++ is one of Mohak's core focuses — particularly <strong>Unreal Engine C++</strong>. He's actively building on his foundational knowledge to move beyond Blueprint scripting and into deeper engine customization.",
+        "Mohak codes in <strong>C++</strong> with a focus on Unreal Engine development. It's a key part of his roadmap to becoming a complete game developer.",
+      ]
     },
-    {
-      keys: ['thank', 'thanks', 'awesome', 'cool', 'great', 'nice', 'wow'],
-      answer: "You're very welcome! Mohak appreciates you stopping by. Feel free to reach out to him directly anytime!"
-    }
   ];
 
-  function getResponse(text) {
-    const lower = text.toLowerCase();
-    for (const item of qa) {
-      if (item.keys.some(k => lower.includes(k))) return item.answer;
+  /* ── Context memory ── */
+  let lastTopicId = null;
+  const usedVariants = {};
+
+  /* ── Suggestion chips per topic ── */
+  const suggestions = {
+    'default':    ['His skills', 'His projects', 'Contact him', 'His dream'],
+    'about':      ['His skills', 'His projects', 'His education'],
+    'skills':     ['UE5 skills', 'Blender work', 'C++ experience'],
+    'projects':   ['Car game details', 'Blender work', 'Python project'],
+    'cargame':    ['Blender assets', 'His UE5 skills', 'More projects'],
+    'goal':       ['His projects', 'Contact him', 'His experience'],
+    'contact':    ['His GitHub', 'His Instagram', 'Download CV'],
+    'intro':      ['Who is Mohak?', 'His skills', 'His projects'],
+  };
+
+  /* ── Tokenize & score ── */
+  function score(input, topic) {
+    const lower = input.toLowerCase().replace(/[^\w\s]/g, '');
+    const tokens = lower.split(/\s+/);
+    let s = 0;
+    for (const key of topic.keys) {
+      if (lower.includes(key)) s += topic.weight * 2;
+      else {
+        const keyTokens = key.split(/\s+/);
+        for (const kt of keyTokens) {
+          if (tokens.some(t => t === kt || (t.length > 3 && kt.includes(t)) || (kt.length > 3 && t.includes(kt)))) {
+            s += topic.weight;
+          }
+        }
+      }
     }
-    return "I'm not sure about that! Try asking about Mohak's skills, projects, education, or contact info. I'm still learning!";
+    return s;
+  }
+
+  /* ── Detect follow-ups ── */
+  function isFollowUp(input) {
+    const lower = input.toLowerCase();
+    return ['tell me more','more about','what else','explain','elaborate','go on','continue','and','anything else','what about that'].some(p => lower.includes(p));
+  }
+
+  /* ── Pick response variant (avoid repeats) ── */
+  function pickVariant(topic) {
+    const used = usedVariants[topic.id] || [];
+    const available = topic.variants.filter((_, i) => !used.includes(i));
+    const pool = available.length > 0 ? available : topic.variants;
+    const idx = topic.variants.indexOf(pool[Math.floor(Math.random() * pool.length)]);
+    usedVariants[topic.id] = [...(usedVariants[topic.id] || []).slice(-2), idx];
+    return topic.variants[idx];
+  }
+
+  /* ── Get best response ── */
+  function getResponse(input) {
+    // Follow-up: expand on last topic
+    if (isFollowUp(input) && lastTopicId) {
+      const last = knowledge.find(k => k.id === lastTopicId);
+      if (last && last.variants.length > 1) {
+        const reply = pickVariant(last);
+        return { text: reply, topicId: lastTopicId };
+      }
+    }
+
+    // Score all topics
+    const scored = knowledge
+      .map(t => ({ topic: t, s: score(input, t) }))
+      .filter(x => x.s > 0)
+      .sort((a, b) => b.s - a.s);
+
+    if (scored.length > 0) {
+      const best = scored[0].topic;
+      lastTopicId = best.id;
+      return { text: pickVariant(best), topicId: best.id };
+    }
+
+    // Smart fallback
+    const fallbacks = [
+      "That's an interesting question! I'm specifically trained on Mohak's portfolio. Try asking about his <strong>skills</strong>, <strong>projects</strong>, <strong>education</strong>, or <strong>how to contact him</strong>.",
+      "I want to give you the right answer — could you rephrase that? I know everything about Mohak's <strong>game dev work</strong>, <strong>3D art</strong>, <strong>background</strong>, and <strong>contact details</strong>.",
+      "Hmm, I didn't quite catch that. I'm best at answering questions about Mohak's <strong>projects</strong>, <strong>skills</strong>, and <strong>experience</strong>. What would you like to know?",
+    ];
+    return { text: fallbacks[Math.floor(Math.random() * fallbacks.length)], topicId: null };
+  }
+
+  /* ── Time-aware greeting ── */
+  function getGreeting() {
+    const h = new Date().getHours();
+    const time = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    const openers = [
+      `${time}! I'm <strong>ARIA</strong>, Mohak's portfolio assistant. What would you like to know about him?`,
+      `${time}! Welcome to Mohak's portfolio. I'm <strong>ARIA</strong> — ask me anything about his work, skills, or how to reach him.`,
+    ];
+    return openers[Math.floor(Math.random() * openers.length)];
   }
 
   /* ── Init ── */
@@ -308,19 +466,61 @@
 
     if (!btn || !panel) { console.warn('ARIA: elements missing.'); return; }
 
-    let micPermissionGranted = false;
+    /* Update greeting with time-aware message */
+    const firstMsg = chatBox.querySelector('.aria-msg-bot');
+    if (firstMsg) firstMsg.innerHTML = getGreeting();
 
-    function requestMicOnce() {
-      if (micPermissionGranted) return;
-      navigator.mediaDevices && navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          micPermissionGranted = true;
-          stream.getTracks().forEach(t => t.stop()); // just need permission, stop stream
-        })
-        .catch(() => {}); // silent fail, recognition will show error if denied
+    /* Suggestion chips */
+    const chipBar = document.createElement('div');
+    chipBar.id = 'ariaSuggestions';
+    chatBox.after(chipBar);
+
+    function renderChips(topicId) {
+      const chips = suggestions[topicId] || suggestions['default'];
+      chipBar.innerHTML = chips.map(c => `<button class="aria-chip">${c}</button>`).join('');
+      chipBar.querySelectorAll('.aria-chip').forEach(chip => {
+        chip.addEventListener('click', function () {
+          processInput(this.textContent);
+        });
+      });
+    }
+    renderChips('default');
+
+    /* Add message */
+    function addMsg(html, type) {
+      const div = document.createElement('div');
+      div.className = 'aria-msg aria-msg-' + type;
+      div.innerHTML = html;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
     }
 
-    /* Toggle */
+    /* Typing indicator */
+    function showTyping() {
+      const t = document.createElement('div');
+      t.className = 'aria-typing';
+      t.innerHTML = '<span></span><span></span><span></span>';
+      chatBox.appendChild(t);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return t;
+    }
+
+    /* Process input (from mic or chip) */
+    function processInput(text) {
+      addMsg(text, 'user');
+      const typing = showTyping();
+      const delay = 600 + Math.random() * 500; // feels natural
+      setTimeout(function () {
+        typing.remove();
+        const result = getResponse(text);
+        addMsg(result.text, 'bot');
+        renderChips(result.topicId || 'default');
+        speak(result.text.replace(/<[^>]+>/g, '')); // strip HTML for TTS
+      }, delay);
+    }
+
+    /* Toggle panel */
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (panel.classList.contains('aria-open')) {
@@ -330,7 +530,13 @@
         panel.classList.add('aria-open');
         btn.style.animationPlayState = 'paused';
         chatBox.scrollTop = chatBox.scrollHeight;
-        requestMicOnce(); // ask for permission as soon as panel opens
+        // Request mic permission silently once
+        if (!btn._micRequested) {
+          btn._micRequested = true;
+          navigator.mediaDevices && navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(s => s.getTracks().forEach(t => t.stop()))
+            .catch(() => {});
+        }
       }
     });
 
@@ -340,58 +546,36 @@
       btn.style.animationPlayState = 'running';
     });
 
-    function addMsg(html, type) {
-      const div = document.createElement('div');
-      div.className = 'aria-msg aria-msg-' + type;
-      div.innerHTML = html;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
+    /* Voice */
     let cachedVoice = null;
     function getFemaleVoice() {
       if (cachedVoice) return cachedVoice;
       const voices = window.speechSynthesis.getVoices();
       if (!voices.length) return null;
-
-      // Windows 11 female voices (Microsoft)
-      const priority = [
-        'Microsoft Aria',
-        'Microsoft Jenny',
-        'Microsoft Zira',
-        'Microsoft Eva',
-        'Google UK English Female',
-        'Samantha',
-        'Victoria',
-        'Karen',
-        'Moira',
-        'Fiona',
-        'Tessa',
-      ];
+      const priority = ['Microsoft Aria','Microsoft Jenny','Microsoft Zira','Microsoft Eva','Google UK English Female','Samantha','Victoria','Karen','Moira','Fiona','Tessa'];
       for (const name of priority) {
         const v = voices.find(v => v.name.includes(name));
         if (v) { cachedVoice = v; return v; }
       }
-      // Fallback: any voice that has 'female' anywhere
-      const femFallback = voices.find(v => v.name.toLowerCase().includes('female'));
-      if (femFallback) { cachedVoice = femFallback; return femFallback; }
-      // Last resort: English female by URI hint
-      const enVoice = voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang === 'en-US');
-      cachedVoice = enVoice || voices[0] || null;
+      cachedVoice = voices.find(v => v.name.toLowerCase().includes('female'))
+                 || voices.find(v => v.lang === 'en-GB')
+                 || voices.find(v => v.lang && v.lang.startsWith('en'))
+                 || null;
       return cachedVoice;
     }
-    window.speechSynthesis.addEventListener('voiceschanged', function() { cachedVoice = null; getFemaleVoice(); }, { once: true });
+    window.speechSynthesis.addEventListener('voiceschanged', function () { cachedVoice = null; getFemaleVoice(); }, { once: true });
 
     function speak(text) {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.rate = 1.05; utt.pitch = 1.2; utt.volume = 1;
-      const voice = getFemaleVoice();
-      if (voice) utt.voice = voice;
+      const v = getFemaleVoice();
+      if (v) utt.voice = v;
       window.speechSynthesis.speak(utt);
     }
 
+    /* Speech Recognition */
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       micBtn.disabled = true;
@@ -430,16 +614,11 @@
       statusDot.classList.remove('aria-listening');
       hint.textContent = 'Tap mic & speak';
       if (e.error === 'not-allowed')
-        addMsg('Mic access denied. Please allow microphone permissions and try again.', 'bot');
+        addMsg('Microphone access was denied. Please allow mic permissions to use voice input.', 'bot');
     };
     recog.onresult = function (e) {
       const said = e.results[0][0].transcript.trim();
-      addMsg(said, 'user');
-      setTimeout(function () {
-        const reply = getResponse(said);
-        addMsg(reply, 'bot');
-        speak(reply);
-      }, 400);
+      processInput(said);
     };
   }
 
