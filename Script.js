@@ -323,7 +323,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (!modal.classList.contains('open') && !detailPage.classList.contains('open') &&
       !ueListOverlay.classList.contains('open') && !blenderFeedOverlay.classList.contains('open')) {
-    const map = { '&':'home','*':'about','(':'skills',')':'projects','5':'contact' };
+    const map = { '&':'home','*':'about','(':'skills',')':'projects',':':'contact' };
     if (map[e.key]) navigateTo(map[e.key]);
   }
 });
