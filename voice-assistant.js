@@ -1120,9 +1120,17 @@
 
   /* ── Process input ── */
   const WORKER_URL = 'https://white-paper-62ef.mittalmohak0.workers.dev';
+  let isProcessing = false;
 
   async function processInput(text) {
-    if (!text.trim()) return;
+    if (!text.trim() || isProcessing) return;
+    isProcessing = true;
+
+    // Lock inputs
+    textInput.disabled = true;
+    sendBtn.disabled = true;
+    micBtn.disabled = true;
+
     addUserMessage(text);
     textInput.value = '';
     const old = document.getElementById('ariaChipBar');
@@ -1137,6 +1145,7 @@
       const fw = getFarewell();
       addBotMessage(fw, 'farewell');
       speak(fw.replace(/<[^>]+>/g, ''));
+      unlock();
       setTimeout(() => closeModal(), 3500);
       return;
     }
@@ -1156,11 +1165,20 @@
       speak(reply);
     } catch (err) {
       typing.remove();
-      // Fallback to local KB if Worker fails
       const result = getResponse(text);
       addBotMessage(result.text + ' <em style="font-size:11px;opacity:0.5">(offline mode)</em>', result.topicId);
       speak(result.text.replace(/<[^>]+>/g, ''));
     }
+
+    unlock();
+  }
+
+  function unlock() {
+    isProcessing = false;
+    textInput.disabled = false;
+    sendBtn.disabled = false;
+    micBtn.disabled = false;
+    textInput.focus();
   }
 
   /* ── Example buttons ── */
