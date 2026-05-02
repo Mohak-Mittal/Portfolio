@@ -456,6 +456,25 @@
   let isProcessing = false;
   let offTopicCount = 0;
 
+  function lock() {
+    isProcessing = true;
+    textInput.disabled = true;
+    sendBtn.disabled = true;
+    micBtn.disabled = true;
+    statusText.textContent = 'Thinking...';
+    document.querySelectorAll('.aexample').forEach(b => b.disabled = true);
+  }
+
+  function unlock() {
+    isProcessing = false;
+    textInput.disabled = false;
+    sendBtn.disabled = false;
+    micBtn.disabled = false;
+    statusText.textContent = 'Online & ready';
+    document.querySelectorAll('.aexample').forEach(b => b.disabled = false);
+    textInput.focus();
+  }
+
   async function processInput(text) {
     text = text.trim();
     if (!text || isProcessing) return;
@@ -474,11 +493,8 @@
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       const reply = data.reply || "I'm having a moment — please try again!";
-
-      // Track off-topic streak
       if (data.isOffTopic) offTopicCount++;
       else offTopicCount = 0;
-
       addBotMsg(reply);
       speak(reply);
     } catch (err) {
