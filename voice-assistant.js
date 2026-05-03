@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  const WORKER = 'https://white-paper-62ef.mittalmohak0.workers.dev';
+  const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
 
   /* ── STYLES ── */
   const s = document.createElement('style');
