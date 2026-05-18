@@ -642,3 +642,6 @@
     height: 110px !important;
   }
 }
+
+#aria-overlay, #aria-overlay * { cursor: none !important; }
+.cursor-glow { z-index: 999999 !important; }
