@@ -1,582 +1,753 @@
 /* ================================================================
    ARIA — Mohak Mittal's AI Portfolio Assistant
-   Click icon → icon hides → chat popup opens
-   All AI handled by Cloudflare Worker
+   Professional Hollywood-style Interface
+   Hologram ball + Chunked speech + Sliding window memory
    ================================================================ */
 
 (function () {
   'use strict';
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
+  
 
-  /* ── STYLES ── */
-  const s = document.createElement('style');
-  s.textContent = `
-    /* Floating Icon */
-    #aria-icon {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      z-index: 99999;
-      width: 64px;
-      height: 64px;
-      background: rgba(4, 8, 20, 0.95);
-      border: 2px solid #00f0ff;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      cursor: pointer;
-      box-shadow: 0 0 24px rgba(0,240,255,0.4), 0 8px 32px rgba(0,0,0,0.8);
-      animation: iconFloat 3s ease-in-out infinite;
-      transition: transform 0.2s, box-shadow 0.2s;
-      user-select: none;
-    }
-    #aria-icon:hover {
-      transform: scale(1.08);
-      box-shadow: 0 0 40px rgba(0,240,255,0.6), 0 8px 32px rgba(0,0,0,0.9);
-    }
-    #aria-icon span {
-      font-family: 'Orbitron', monospace, sans-serif;
-      font-size: 8px;
-      font-weight: 700;
-      color: #00f0ff;
-      letter-spacing: 2px;
-    }
-    @keyframes iconFloat {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-8px); }
+  /* ================================================================
+     HOLOGRAM BALL — Canvas Renderer
+     States: idle | listening | thinking | speaking
+     ================================================================ */
+  class HologramBall {
+    constructor(canvas) {
+      this.canvas  = canvas;
+      this.ctx     = canvas.getContext('2d');
+      this.state   = 'idle';
+      this.ry      = 0;   // rotation angle Y
+      this.rx      = 0.3; // slight tilt
+      this.amp     = 0;   // current amplitude (for speaking)
+      this.targetAmp = 0;
+      this.frame   = 0;
+      this.listenPulse = 0;
+      this.thinkAngle  = 0;
+      this.rings   = [
+        { angle: 0,           tilt: 0.28,  speed: 0.007,  color: 'rgba(14,165,233,VAL)'  },
+        { angle: Math.PI/2.4, tilt: 1.05,  speed: -0.005, color: 'rgba(14,165,233,VAL)'  },
+        { angle: Math.PI/1.2, tilt: 1.62,  speed: 0.0035, color: 'rgba(99,102,241,VAL)'  },
+      ];
+      this.sphereDots = this._genDots(90);
+      this._raf();
     }
 
-    /* Chat Popup */
-    #aria-popup {
-      position: fixed;
-      bottom: 0;
-      right: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 99998;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(8px);
-    }
-    #aria-popup.visible {
-      display: flex;
-      animation: popupIn 0.3s ease both;
-    }
-    @keyframes popupIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+    _genDots(n) {
+      const pts = [];
+      const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
+      for (let i = 0; i < n; i++) {
+        const y    = 1 - (i / (n - 1)) * 2;
+        const r    = Math.sqrt(1 - y * y);
+        const theta = phi * i;
+        pts.push({ x: Math.cos(theta) * r, y, z: Math.sin(theta) * r });
+      }
+      return pts;
     }
 
-    #aria-box {
-      width: min(560px, 96vw);
-      height: min(680px, 92vh);
-      background: rgba(4, 7, 18, 0.98);
-      border: 1.5px solid rgba(0, 240, 255, 0.4);
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 0 80px rgba(0,240,255,0.2), 0 40px 100px rgba(0,0,0,0.95);
-      animation: boxIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-    @keyframes boxIn {
-      from { transform: scale(0.88) translateY(30px); opacity: 0; }
-      to   { transform: scale(1) translateY(0); opacity: 1; }
+    setState(s) {
+      this.state = s;
+      if (s === 'speaking') this.targetAmp = 1;
+      else this.targetAmp = 0;
     }
 
-    /* Header */
-    #aria-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid rgba(0,240,255,0.12);
-      background: rgba(0,240,255,0.03);
-      flex-shrink: 0;
-    }
-    #aria-avatar {
-      width: 42px; height: 42px;
-      background: rgba(0,240,255,0.08);
-      border: 1.5px solid rgba(0,240,255,0.3);
-      border-radius: 13px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    #aria-title {
-      flex: 1;
-    }
-    #aria-name {
-      font-family: 'Orbitron', monospace, sans-serif;
-      font-size: 12px; font-weight: 700;
-      color: #00f0ff; letter-spacing: 1px;
-    }
-    #aria-status {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 11px; color: rgba(0,240,255,0.5);
-      margin-top: 2px; font-family: sans-serif;
-    }
-    #aria-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #00ff88; box-shadow: 0 0 6px #00ff88;
-      animation: dotPulse 2s ease-in-out infinite;
-    }
-    @keyframes dotPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    #aria-close {
-      width: 32px; height: 32px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 9px; color: rgba(200,215,230,0.6);
-      font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s; flex-shrink: 0;
-    }
-    #aria-close:hover { background: rgba(255,60,60,0.15); color: #ff6060; }
-
-    /* Messages */
-    #aria-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(0,240,255,0.15) transparent;
-    }
-    #aria-messages::-webkit-scrollbar { width: 3px; }
-    #aria-messages::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.15); border-radius: 3px; }
-
-    .aria-msg {
-      display: flex; flex-direction: column;
-      max-width: 84%;
-      animation: msgIn 0.25s ease both;
-    }
-    @keyframes msgIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-    .aria-msg.bot  { align-self: flex-start; }
-    .aria-msg.user { align-self: flex-end; }
-
-    .aria-bubble {
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 14px;
-      line-height: 1.6;
-      font-family: 'Rajdhani', sans-serif;
-    }
-    .aria-msg.bot  .aria-bubble {
-      background: rgba(0,240,255,0.07);
-      border: 1px solid rgba(0,240,255,0.2);
-      color: #c8dde8;
-      border-bottom-left-radius: 4px;
-    }
-    .aria-msg.user .aria-bubble {
-      background: rgba(255,112,67,0.12);
-      border: 1px solid rgba(255,112,67,0.25);
-      color: #ffd0bb;
-      border-bottom-right-radius: 4px;
-    }
-    .aria-time {
-      font-size: 10px;
-      color: rgba(150,170,190,0.35);
-      margin-top: 3px;
-      font-family: monospace;
-    }
-    .aria-msg.user .aria-time { text-align: right; }
-
-    /* Typing dots */
-    .aria-typing {
-      display: flex; align-items: center; gap: 5px;
-      padding: 12px 16px;
-      background: rgba(0,240,255,0.07);
-      border: 1px solid rgba(0,240,255,0.2);
-      border-radius: 16px; border-bottom-left-radius: 4px;
-      align-self: flex-start;
-    }
-    .aria-typing span {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #00f0ff; display: inline-block;
-      animation: td 1.2s ease-in-out infinite;
-    }
-    .aria-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .aria-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes td { 0%,60%,100%{transform:translateY(0);opacity:0.3;} 30%{transform:translateY(-7px);opacity:1;} }
-
-    /* Suggestions */
-    #aria-suggestions {
-      padding: 0 20px 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    .aria-chip {
-      padding: 6px 12px;
-      background: rgba(0,240,255,0.05);
-      border: 1px solid rgba(0,240,255,0.2);
-      border-radius: 20px;
-      font-size: 12px;
-      color: rgba(0,240,255,0.7);
-      cursor: pointer;
-      font-family: 'Rajdhani', sans-serif;
-      transition: all 0.2s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .aria-chip:hover, .aria-chip:active {
-      background: rgba(0,240,255,0.14);
-      color: #00f0ff;
-      border-color: rgba(0,240,255,0.45);
+    _rotate(x, y, z) {
+      // Y axis
+      const x1 =  x * Math.cos(this.ry) + z * Math.sin(this.ry);
+      const z1 = -x * Math.sin(this.ry) + z * Math.cos(this.ry);
+      // X axis
+      const y2 =  y * Math.cos(this.rx) - z1 * Math.sin(this.rx);
+      const z2 =  y * Math.sin(this.rx) + z1 * Math.cos(this.rx);
+      return { x: x1, y: y2, z: z2 };
     }
 
-    /* Input */
-    #aria-input-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border-top: 1px solid rgba(0,240,255,0.1);
-      background: rgba(0,240,255,0.02);
-      flex-shrink: 0;
+    _draw() {
+      const cvs = this.canvas;
+      const ctx = this.ctx;
+      const W   = cvs.width;
+      const H   = cvs.height;
+      const cx  = W / 2;
+      const cy  = H / 2;
+      const R   = Math.min(W, H) * 0.33;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Smooth amplitude ──
+      this.amp += (this.targetAmp - this.amp) * 0.08;
+
+      // ── State-specific rotation speeds ──
+      let rySpeed = 0.004;
+      if (this.state === 'thinking') rySpeed = 0.018;
+      if (this.state === 'speaking') rySpeed = 0.008 + this.amp * 0.012;
+      if (this.state === 'listening') rySpeed = 0.006;
+      this.ry += rySpeed;
+
+      // ── Outer glow ──
+      const glowR = R * (1.5 + this.amp * 0.25);
+      const outerGlow = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, glowR);
+      if (this.state === 'listening') {
+        outerGlow.addColorStop(0,   'rgba(52,211,153,0.07)');
+        outerGlow.addColorStop(0.5, 'rgba(52,211,153,0.02)');
+        outerGlow.addColorStop(1,   'transparent');
+      } else if (this.state === 'thinking') {
+        outerGlow.addColorStop(0,   'rgba(251,191,36,0.06)');
+        outerGlow.addColorStop(1,   'transparent');
+      } else if (this.state === 'speaking') {
+        const speakAlpha = 0.05 + this.amp * 0.1;
+        outerGlow.addColorStop(0,   `rgba(167,139,250,${speakAlpha})`);
+        outerGlow.addColorStop(1,   'transparent');
+      } else {
+        outerGlow.addColorStop(0,   'rgba(14,165,233,0.05)');
+        outerGlow.addColorStop(1,   'transparent');
+      }
+      ctx.fillStyle = outerGlow;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Sphere dots ──
+      for (const pt of this.sphereDots) {
+        const r  = this._rotate(pt.x, pt.y, pt.z);
+        const px = cx + r.x * R;
+        const py = cy - r.y * R;
+        const depth = (r.z + 1) / 2; // 0..1
+
+        if (r.z < -0.1) continue; // hide back half mostly
+
+        const dotAlpha  = depth * 0.55;
+        const dotRadius = 1.1 + depth * 0.9;
+
+        let dotColor = `rgba(14,165,233,${dotAlpha})`;
+        if (this.state === 'listening') dotColor = `rgba(52,211,153,${dotAlpha})`;
+        if (this.state === 'thinking')  dotColor = `rgba(251,191,36,${dotAlpha * 0.9})`;
+        if (this.state === 'speaking')  dotColor = `rgba(167,139,250,${dotAlpha + this.amp * 0.2})`;
+
+        ctx.beginPath();
+        ctx.arc(px, py, dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor;
+        ctx.fill();
+      }
+
+      // ── Orbital rings ──
+      for (let i = 0; i < this.rings.length; i++) {
+        const ring = this.rings[i];
+        ring.angle += ring.speed * (this.state === 'thinking' ? 2.5 : 1);
+
+        const tiltCos = Math.cos(ring.tilt);
+        const rX = R * 1.05;
+        const rY = R * 1.05 * Math.abs(Math.sin(ring.tilt));
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(ring.angle);
+
+        // Speaking pulse
+        const ringPulse = this.state === 'speaking'
+          ? 1 + Math.sin(this.frame * 0.18 + i * 2.1) * 0.12 * this.amp
+          : 1;
+
+        let baseAlpha = 0.35;
+        if (this.state === 'listening') baseAlpha = 0.5;
+        if (this.state === 'thinking')  baseAlpha = 0.28;
+        if (this.state === 'speaking')  baseAlpha = 0.3 + this.amp * 0.25;
+
+        const c = ring.color.replace('VAL', String(baseAlpha));
+
+        ctx.scale(ringPulse, ringPulse);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = c;
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+
+        // Bright point moving on ring
+        const dotTheta = ring.angle * 3.1;
+        const dX = Math.cos(dotTheta) * rX;
+        const dY = Math.sin(dotTheta) * rY;
+
+        ctx.beginPath();
+        ctx.arc(dX, dY, 2.5, 0, Math.PI * 2);
+        let dotC = '#0ea5e9';
+        if (this.state === 'listening') dotC = '#34d399';
+        if (this.state === 'thinking')  dotC = '#fbbf24';
+        if (this.state === 'speaking')  dotC = '#a78bfa';
+        ctx.fillStyle = dotC;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ── Core glow ──
+      let coreAlpha = 0.55 + 0.05 * Math.sin(this.frame * 0.04);
+      if (this.state === 'speaking')  coreAlpha = 0.6 + this.amp * 0.35;
+      if (this.state === 'listening') coreAlpha = 0.55 + 0.1 * Math.sin(this.frame * 0.15);
+      if (this.state === 'thinking')  coreAlpha = 0.45 + 0.15 * ((Math.sin(this.frame * 0.12) + 1) / 2);
+
+      const coreR = R * (0.22 + (this.state === 'speaking' ? this.amp * 0.06 : 0));
+      const core  = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 2.5);
+
+      if (this.state === 'listening') {
+        core.addColorStop(0,   `rgba(52,211,153,${coreAlpha})`);
+        core.addColorStop(0.4, `rgba(52,211,153,${coreAlpha * 0.3})`);
+        core.addColorStop(1,   'transparent');
+      } else if (this.state === 'thinking') {
+        core.addColorStop(0,   `rgba(251,191,36,${coreAlpha})`);
+        core.addColorStop(0.4, `rgba(251,191,36,${coreAlpha * 0.25})`);
+        core.addColorStop(1,   'transparent');
+      } else if (this.state === 'speaking') {
+        core.addColorStop(0,   `rgba(167,139,250,${coreAlpha})`);
+        core.addColorStop(0.4, `rgba(167,139,250,${coreAlpha * 0.3})`);
+        core.addColorStop(1,   'transparent');
+      } else {
+        core.addColorStop(0,   `rgba(14,165,233,${coreAlpha})`);
+        core.addColorStop(0.4, `rgba(14,165,233,${coreAlpha * 0.3})`);
+        core.addColorStop(1,   'transparent');
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = core;
+      ctx.fill();
+
+      // ── Listening pulse rings ──
+      if (this.state === 'listening') {
+        this.listenPulse = (this.listenPulse + 0.025) % 1;
+        for (let p = 0; p < 3; p++) {
+          const t     = (this.listenPulse + p / 3) % 1;
+          const pR    = R * 1.1 + t * R * 0.8;
+          const pAlpha = (1 - t) * 0.25;
+          ctx.beginPath();
+          ctx.arc(cx, cy, pR, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(52,211,153,${pAlpha})`;
+          ctx.lineWidth   = 1;
+          ctx.stroke();
+        }
+      }
+
+      // ── Thinking orbit dots ──
+      if (this.state === 'thinking') {
+        this.thinkAngle += 0.05;
+        for (let d = 0; d < 5; d++) {
+          const a  = this.thinkAngle + (d / 5) * Math.PI * 2;
+          const dR = R * 1.25;
+          const dX = cx + Math.cos(a) * dR;
+          const dY = cy + Math.sin(a) * dR;
+          ctx.beginPath();
+          ctx.arc(dX, dY, 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(251,191,36,${0.3 + (d / 5) * 0.4})`;
+          ctx.fill();
+        }
+      }
+
+      this.frame++;
     }
-    #aria-mic {
-      width: 44px; height: 44px; min-width: 44px;
-      border-radius: 50%;
-      border: 2px solid rgba(0,240,255,0.45);
-      background: rgba(0,240,255,0.07);
-      color: #00f0ff;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
+
+    _raf() {
+      this._draw();
+      requestAnimationFrame(() => this._raf());
     }
-    #aria-mic:hover { background: rgba(0,240,255,0.15); box-shadow: 0 0 16px rgba(0,240,255,0.35); }
-    #aria-mic.on {
-      background: rgba(255,68,68,0.15) !important;
-      border-color: #ff4444 !important;
-      color: #ff4444 !important;
-      animation: micOn 0.9s ease-in-out infinite;
-    }
-    #aria-mic:disabled { opacity: 0.35; cursor: not-allowed; }
-    @keyframes micOn { 0%,100%{transform:scale(1);} 50%{transform:scale(1.12);} }
+  }
 
-    #aria-text {
-      flex: 1;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(0,240,255,0.2);
-      border-radius: 12px;
-      padding: 11px 14px;
-      color: #c8dde8;
-      font-size: 14px;
-      font-family: 'Rajdhani', sans-serif;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none;
-    }
-    #aria-text::placeholder { color: rgba(0,240,255,0.28); }
-    #aria-text:focus { border-color: rgba(0,240,255,0.5); box-shadow: 0 0 10px rgba(0,240,255,0.1); }
-    #aria-text:disabled { opacity: 0.4; }
+  /* ================================================================
+     BUILD HTML
+     ================================================================ */
 
-    #aria-send {
-      width: 44px; height: 44px; min-width: 44px;
-      border-radius: 50%;
-      border: 2px solid rgba(0,240,255,0.45);
-      background: rgba(0,240,255,0.1);
-      color: #00f0ff;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #aria-send:hover { background: rgba(0,240,255,0.22); box-shadow: 0 0 16px rgba(0,240,255,0.35); }
-    #aria-send:disabled { opacity: 0.35; cursor: not-allowed; }
+  // Trigger button
+  const trigger = document.createElement('div');
+  trigger.id = 'aria-trigger';
+  trigger.title = 'Chat with ARIA';
+  trigger.innerHTML = `
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5Z"/>
+    <path d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25Z"/>
+    <path d="M5 17L5.5 18.5L7 19L5.5 19.5L5 21L4.5 19.5L3 19L4.5 18.5Z"/>
+  </svg>`;
 
-    @media (max-width: 480px) {
-      #aria-icon { bottom: 18px; right: 18px; width: 58px; height: 58px; }
-      #aria-box { border-radius: 16px; }
-      .aria-msg { max-width: 90%; }
-      .aria-bubble { font-size: 13px; }
-    }
-  `;
-  document.head.appendChild(s);
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'aria-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.innerHTML = `
+    <div id="aria-container">
 
-  /* ── SVG ── */
-  const botSVG = (w, h) => `
-    <svg width="${w}" height="${h}" viewBox="0 0 64 64" fill="none">
-      <line x1="32" y1="4" x2="32" y2="13" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="32" cy="3" r="3" fill="#00f0ff"/>
-      <rect x="10" y="13" width="44" height="30" rx="9" fill="#060d1f" stroke="#00f0ff" stroke-width="1.8"/>
-      <ellipse cx="22" cy="27" rx="5" ry="5" fill="rgba(0,240,255,0.1)"/>
-      <ellipse cx="22" cy="27" rx="3.2" ry="3.2" fill="#00f0ff"/>
-      <ellipse cx="23" cy="25.8" rx="1.1" ry="1.1" fill="white" opacity=".7"/>
-      <ellipse cx="42" cy="27" rx="5" ry="5" fill="rgba(0,240,255,0.1)"/>
-      <ellipse cx="42" cy="27" rx="3.2" ry="3.2" fill="#00f0ff"/>
-      <ellipse cx="43" cy="25.8" rx="1.1" ry="1.1" fill="white" opacity=".7"/>
-      <rect x="22" y="35" width="20" height="4" rx="2" fill="#00f0ff" opacity=".5"/>
-      <rect x="5"  y="22" width="5"  height="12" rx="2.5" fill="#00f0ff" opacity=".4"/>
-      <rect x="54" y="22" width="5"  height="12" rx="2.5" fill="#00f0ff" opacity=".4"/>
-    </svg>`;
-
-  /* ── BUILD DOM ── */
-
-  // Floating icon
-  const icon = document.createElement('div');
-  icon.id = 'aria-icon';
-  icon.innerHTML = botSVG(32, 32) + '<span>ARIA</span>';
-  document.body.appendChild(icon);
-
-  // Popup
-  const popup = document.createElement('div');
-  popup.id = 'aria-popup';
-  popup.innerHTML = `
-    <div id="aria-box">
+      <!-- HEADER -->
       <div id="aria-header">
-        <div id="aria-avatar">${botSVG(26, 26)}</div>
-        <div id="aria-title">
-          <div id="aria-name">ARIA — AI Portfolio Assistant</div>
-          <div id="aria-status"><div id="aria-dot"></div><span id="aria-status-txt">Online &amp; ready</span></div>
+        <div class="aria-status-dot" id="aria-dot"></div>
+        <div class="aria-header-info">
+          <div class="aria-header-name">ARIA</div>
+          <div class="aria-header-sub">Mohak Mittal · AI Portfolio Assistant</div>
         </div>
-        <button id="aria-close">✕</button>
-      </div>
-      <div id="aria-messages"></div>
-      <div id="aria-suggestions">
-        <button class="aria-chip">🎮 His games</button>
-        <button class="aria-chip">🛠️ His skills</button>
-        <button class="aria-chip">🎯 His goals</button>
-        <button class="aria-chip">📩 Contact him</button>
-        <button class="aria-chip">🖥️ UE5 work</button>
-        <button class="aria-chip">🤖 ARIA project</button>
-        <button class="aria-chip">🎓 Education</button>
-        <button class="aria-chip">🌟 Why hire him?</button>
-      </div>
-      <div id="aria-input-row">
-        <button id="aria-mic">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <rect x="9" y="2" width="6" height="11" rx="3"/>
-            <path d="M5 10a7 7 0 0 0 14 0"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
+        <div id="aria-status-label">Online</div>
+        <button id="aria-close" title="Close" aria-label="Close ARIA">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
-        <input id="aria-text" type="text" placeholder="Ask me anything about Mohak..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-        <button id="aria-send">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
+      </div>
+
+      <!-- BODY -->
+      <div id="aria-body">
+
+        <!-- LEFT: Hologram Ball -->
+        <div id="aria-left">
+          <canvas id="aria-canvas" width="200" height="200"></canvas>
+          <div class="aria-ball-info">
+            <div class="aria-ball-name">ARIA</div>
+            <div class="aria-ball-tagline">AI · v2.0 · Active</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Chat -->
+        <div id="aria-right">
+          <div id="aria-messages" role="log" aria-live="polite"></div>
+
+          <div id="aria-suggestions">
+            <button class="aria-chip">What can Mohak build?</button>
+            <button class="aria-chip">Tell me about his projects</button>
+            <button class="aria-chip">What are his skills?</button>
+            <button class="aria-chip">How can I contact him?</button>
+          </div>
+
+          <div id="aria-input-area">
+            <button id="aria-mic-btn" title="Voice input" aria-label="Toggle microphone">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <rect x="9" y="2" width="6" height="11" rx="3"/>
+                <path d="M5 10a7 7 0 0 0 14 0"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+            <input
+              id="aria-text-input"
+              type="text"
+              placeholder="Ask anything about Mohak..."
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="500"
+            />
+            <button id="aria-send-btn" title="Send" aria-label="Send message">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>`;
-  document.body.appendChild(popup);
 
-  /* ── REFS ── */
-  const msgs      = document.getElementById('aria-messages');
-  const chips     = document.getElementById('aria-suggestions');
-  const mic       = document.getElementById('aria-mic');
-  const textEl    = document.getElementById('aria-text');
-  const sendEl    = document.getElementById('aria-send');
-  const closeEl   = document.getElementById('aria-close');
-  const statusTxt = document.getElementById('aria-status-txt');
+  document.body.appendChild(trigger);
+  document.body.appendChild(overlay);
+
+  /* ── ELEMENT REFS ── */
+  const container   = document.getElementById('aria-container');
+  const dot         = document.getElementById('aria-dot');
+  const statusLabel = document.getElementById('aria-status-label');
+  const closeBtn    = document.getElementById('aria-close');
+  const messages    = document.getElementById('aria-messages');
+  const suggestions = document.getElementById('aria-suggestions');
+  const micBtn      = document.getElementById('aria-mic-btn');
+  const textInput   = document.getElementById('aria-text-input');
+  const sendBtn     = document.getElementById('aria-send-btn');
+  const canvas      = document.getElementById('aria-canvas');
+
+  /* ── INIT BALL ── */
+  // Resize canvas for crisp rendering
+  const dpr = window.devicePixelRatio || 1;
+  const ballSize = window.innerWidth <= 640 ? 130 : 200;
+  canvas.width  = ballSize * dpr;
+  canvas.height = ballSize * dpr;
+  canvas.style.width  = ballSize + 'px';
+  canvas.style.height = ballSize + 'px';
+  canvas.getContext('2d').scale(dpr, dpr);
+
+  const ball = new HologramBall(canvas);
+
+  /* ── SESSION STATE ── */
+  let isOpen    = false;
+  let greeted   = false;
+  let busy      = false;
+  let chatHistory = []; // sliding window — max 4 items (last 2 exchanges)
+
+  /* ── STATUS HELPER ── */
+  function setStatus(state, text) {
+    // Dot
+    dot.className = 'aria-status-dot';
+    if (state === 'listening') dot.classList.add('aria-dot-listening');
+    if (state === 'thinking')  dot.classList.add('aria-dot-thinking');
+    if (state === 'speaking')  dot.classList.add('aria-dot-speaking');
+
+    // Label
+    statusLabel.className = '';
+    statusLabel.id = 'aria-status-label';
+    if (state === 'listening') statusLabel.classList.add('aria-status-listening');
+    if (state === 'thinking')  statusLabel.classList.add('aria-status-thinking');
+    if (state === 'speaking')  statusLabel.classList.add('aria-status-speaking');
+
+    statusLabel.textContent = text;
+
+    // Ball
+    ball.setState(state === 'idle' ? 'idle' : state);
+  }
 
   /* ── OPEN / CLOSE ── */
-  let opened = false;
+  function openAria() {
+    overlay.classList.add('aria-open');
+    trigger.style.display = 'none';
+    isOpen = true;
 
-  function open() {
-    icon.style.display = 'none';
-    popup.classList.add('visible');
-    if (!opened) {
-      opened = true;
-      setTimeout(() => addBot(greeting()), 350);
+    if (!greeted) {
+      greeted = true;
+      setTimeout(() => {
+        const h = new Date().getHours();
+        const greet =
+          h < 5  ? 'Good night' :
+          h < 12 ? 'Good morning' :
+          h < 17 ? 'Good afternoon' :
+          h < 21 ? 'Good evening' : 'Good night';
+        addBot(`${greet}. I'm ARIA, Mohak Mittal's AI assistant. Ask me anything about his work, skills, or how to get in touch.`);
+      }, 400);
     }
-    setTimeout(() => textEl.focus(), 400);
+
+    setTimeout(() => textInput.focus(), 500);
   }
 
-  function close() {
-    popup.classList.remove('visible');
-    icon.style.display = 'flex';
+  function closeAria() {
+    overlay.classList.remove('aria-open');
+    trigger.style.display = 'flex';
+    isOpen = false;
+    stopSpeaking();
   }
 
-  icon.addEventListener('click', open);
-  closeEl.addEventListener('click', close);
-  popup.addEventListener('click', e => { if (e.target === popup) close(); });
+  trigger.addEventListener('click', openAria);
+  closeBtn.addEventListener('click', closeAria);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeAria();
+  });
 
-  /* ── GREETING ── */
-  function greeting() {
-    const h = new Date().getHours();
-    const t = h < 12 ? '☀️ Good morning' : h < 17 ? '🌤️ Good afternoon' : h < 21 ? '🌆 Good evening' : '🌙 Good night';
-    return `${t}! I'm <strong>ARIA</strong>, Mohak's AI assistant powered by Llama 3.3 70B. Ask me anything about his work, skills, or how to get in touch!`;
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && isOpen) closeAria();
+  });
+
+  /* ── TIME HELPER ── */
+  function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  /* ── MESSAGES ── */
-  function now() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
-
+  /* ── ADD MESSAGES ── */
   function addBot(html) {
-    const d = document.createElement('div');
-    d.className = 'aria-msg bot';
-    d.innerHTML = `<div class="aria-bubble">${html}</div><div class="aria-time">ARIA · ${now()}</div>`;
-    msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
+    removeTyping();
+    const d  = document.createElement('div');
+    d.className = 'aria-msg aria-bot';
+    d.innerHTML = `
+      <div class="aria-bubble">${html}</div>
+      <div class="aria-msg-meta">ARIA · ${nowTime()}</div>`;
+    messages.appendChild(d);
+    messages.scrollTop = messages.scrollHeight;
   }
 
   function addUser(text) {
-    chips.style.display = 'none';
+    suggestions.style.display = 'none';
     const d = document.createElement('div');
-    d.className = 'aria-msg user';
-    d.innerHTML = `<div class="aria-bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div><div class="aria-time">You · ${now()}</div>`;
-    msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
+    d.className = 'aria-msg aria-user';
+    const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    d.innerHTML = `
+      <div class="aria-bubble">${safe}</div>
+      <div class="aria-msg-meta">You · ${nowTime()}</div>`;
+    messages.appendChild(d);
+    messages.scrollTop = messages.scrollHeight;
   }
 
-  function typing() {
-    const t = document.createElement('div');
-    t.className = 'aria-typing';
-    t.innerHTML = '<span></span><span></span><span></span>';
-    msgs.appendChild(t);
-    msgs.scrollTop = msgs.scrollHeight;
-    return t;
+  let typingEl = null;
+
+  function showTyping() {
+    removeTyping();
+    typingEl = document.createElement('div');
+    typingEl.className = 'aria-typing';
+    typingEl.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(typingEl);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeTyping() {
+    if (typingEl) { typingEl.remove(); typingEl = null; }
+  }
+
+  /* ── HISTORY MANAGEMENT ── */
+  function pushHistory(role, content) {
+    chatHistory.push({ role, content });
+    // Keep only last 4 messages (2 user + 2 assistant = 2 exchanges)
+    if (chatHistory.length > 4) chatHistory = chatHistory.slice(-4);
   }
 
   /* ── LOCK / UNLOCK ── */
-  let busy = false;
-  let offCount = 0;
-
   function lock() {
     busy = true;
-    textEl.disabled = true;
-    sendEl.disabled = true;
-    mic.disabled = true;
-    statusTxt.textContent = 'Thinking...';
-  }
-  function unlock() {
-    busy = false;
-    textEl.disabled = false;
-    sendEl.disabled = false;
-    mic.disabled = false;
-    statusTxt.textContent = 'Online & ready';
-    textEl.focus();
+    textInput.disabled = true;
+    sendBtn.disabled   = true;
+    micBtn.disabled    = true;
   }
 
-  /* ── SEND ── */
+  function unlock() {
+    busy = false;
+    textInput.disabled = false;
+    sendBtn.disabled   = false;
+    micBtn.disabled    = false;
+    textInput.focus();
+  }
+
+  /* ── SEND MESSAGE ── */
   async function send(text) {
     text = (text || '').trim();
     if (!text || busy) return;
 
     lock();
     addUser(text);
-    textEl.value = '';
+    textInput.value = '';
+    showTyping();
+    setStatus('thinking', 'Thinking...');
 
-    const t = typing();
+    // Push user message to history BEFORE the API call
+    pushHistory('user', text);
 
     try {
       const res = await fetch(WORKER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, offTopicCount: offCount })
+        body: JSON.stringify({
+          message: text,
+          history: chatHistory.slice(0, -1) // send history without current message (worker adds it)
+        })
       });
 
-      t.remove();
+      removeTyping();
 
       if (!res.ok) throw new Error('HTTP ' + res.status);
 
-      const data = await res.json();
-      const reply = data.reply || "I'm having a moment — please try again!";
+      const data  = await res.json();
+      const reply = data.reply || "I seem to be having a moment — please try again.";
 
-      offCount = data.isOffTopic ? Math.min(offCount + 1, 5) : 0;
+      // Push ARIA reply to history
+      pushHistory('assistant', reply);
 
       addBot(reply);
       speak(reply);
 
     } catch (e) {
-      t.remove();
-      addBot("⚠️ Couldn't reach the backend. Make sure you're on the live GitHub Pages site and try again.");
-      console.error('ARIA:', e.message);
+      removeTyping();
+      setStatus('idle', 'Online');
+      addBot("Unable to reach the server right now. Make sure you're on the live site and try again.");
+      console.error('ARIA fetch error:', e.message);
+      unlock();
     }
-
-    unlock();
   }
 
   /* ── EVENT LISTENERS ── */
-  sendEl.addEventListener('click', () => send(textEl.value));
-
-  textEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(textEl.value); }
+  sendBtn.addEventListener('click', () => {
+    send(textInput.value).then(unlock);
   });
 
-  document.querySelectorAll('.aria-chip').forEach(btn => {
+  textInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(textInput.value).then(unlock);
+    }
+  });
+
+  suggestions.querySelectorAll('.aria-chip').forEach(btn => {
     btn.addEventListener('click', function () {
       if (busy) return;
-      const q = this.textContent.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]/gu, '').trim();
-      send(q);
+      const q = this.textContent.trim();
+      send(q).then(unlock);
     });
   });
 
-  /* ── VOICE SYNTHESIS ── */
-  let voice = null;
+  /* ================================================================
+     SPEECH SYNTHESIS — Chunked + Chrome keepAlive fix
+     ================================================================ */
+  let voice      = null;
+  let speaking   = false;
+  let speechQueue = [];
+  let keepAliveInterval = null;
 
   function loadVoice() {
-    const all = speechSynthesis.getVoices();
-    const want = ['Microsoft Aria Online','Microsoft Aria','Microsoft Jenny Online','Microsoft Jenny','Microsoft Zira','Google UK English Female','Samantha','Victoria','Karen','Moira'];
-    for (const n of want) {
-      const v = all.find(v => v.name.includes(n));
+    const all  = window.speechSynthesis.getVoices();
+    // Priority list — prefer neural/online voices
+    const pref = [
+      'Microsoft Aria Online (Natural)',
+      'Microsoft Aria Online',
+      'Microsoft Aria',
+      'Microsoft Jenny Online (Natural)',
+      'Microsoft Jenny Online',
+      'Microsoft Jenny',
+      'Google UK English Female',
+      'Samantha',        // macOS
+      'Karen',           // macOS AU
+      'Moira',           // macOS IE
+      'Microsoft Zira',  // Windows fallback
+    ];
+    for (const name of pref) {
+      const v = all.find(v => v.name === name || v.name.startsWith(name));
       if (v) { voice = v; return; }
     }
-    voice = all.find(v => /female/i.test(v.name)) || all.find(v => v.lang === 'en-GB') || all.find(v => v.lang?.startsWith('en')) || null;
+    // Generic fallbacks
+    voice =
+      all.find(v => /aria/i.test(v.name)) ||
+      all.find(v => /jenny/i.test(v.name)) ||
+      all.find(v => /female/i.test(v.name)) ||
+      all.find(v => v.lang === 'en-GB') ||
+      all.find(v => v.lang && v.lang.startsWith('en')) ||
+      null;
   }
 
   if (window.speechSynthesis) {
-    speechSynthesis.addEventListener('voiceschanged', loadVoice, { once: true });
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoice);
     loadVoice();
   }
 
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g,'').substring(0, 220));
-    u.rate = 1.05; u.pitch = 1.15; u.volume = 1;
-    if (voice) u.voice = voice;
-    u.onstart = () => { statusTxt.textContent = '🔊 Speaking...'; };
-    u.onend   = () => { statusTxt.textContent = 'Online & ready'; };
-    speechSynthesis.speak(u);
+  function speak(rawText) {
+    if (!window.speechSynthesis) {
+      setStatus('idle', 'Online');
+      unlock();
+      return;
+    }
+
+    stopSpeaking();
+
+    // Clean HTML tags
+    const clean = rawText.replace(/<[^>]+>/g, '').trim();
+
+    // Split into sentences — handles . ! ? and ellipsis
+    const chunks = clean
+      .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    if (chunks.length === 0) { unlock(); return; }
+
+    speechQueue = [...chunks];
+    speaking    = true;
+    setStatus('speaking', 'Speaking...');
+
+    _speakNext();
   }
 
-  /* ── SPEECH RECOGNITION ── */
+  function _speakNext() {
+    if (!speaking || speechQueue.length === 0) {
+      _onSpeechDone();
+      return;
+    }
+
+    const chunk = speechQueue.shift();
+    const utt   = new SpeechSynthesisUtterance(chunk);
+
+    utt.rate   = 1.0;
+    utt.pitch  = 1.05;
+    utt.volume = 1;
+    if (voice) utt.voice = voice;
+
+    utt.onend = () => {
+      _speakNext();
+    };
+
+    utt.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      console.warn('Speech error:', e.error);
+      _speakNext();
+    };
+
+    window.speechSynthesis.speak(utt);
+
+    // Chrome keepAlive — prevents browser killing speech after ~15s
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    keepAliveInterval = setInterval(() => {
+      if (!window.speechSynthesis.speaking) {
+        clearInterval(keepAliveInterval);
+        return;
+      }
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }, 10000);
+  }
+
+  function _onSpeechDone() {
+    speaking = false;
+    if (keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null; }
+    setStatus('idle', 'Online');
+    unlock();
+  }
+
+  function stopSpeaking() {
+    speaking = false;
+    speechQueue = [];
+    if (keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }
+
+  /* ================================================================
+     SPEECH RECOGNITION
+     ================================================================ */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SR) {
-    mic.disabled = true;
-    mic.title = 'Use Chrome or Edge for voice';
+    micBtn.disabled = true;
+    micBtn.title    = 'Voice input requires Chrome or Edge';
   } else {
     const rec = new SR();
-    rec.lang = 'en-US';
-    rec.interimResults = false;
+    rec.lang            = 'en-US';
+    rec.interimResults  = false;
     rec.maxAlternatives = 1;
-    rec.continuous = false;
+    rec.continuous      = false;
 
-    let listening = false;
-    let permDone  = false;
+    let listening  = false;
+    let permAsked  = false;
 
-    mic.addEventListener('click', () => {
+    micBtn.addEventListener('click', () => {
       if (busy) return;
       if (listening) { rec.stop(); return; }
-      if (!permDone && navigator.mediaDevices?.getUserMedia) {
-        permDone = true;
+
+      if (!permAsked && navigator.mediaDevices?.getUserMedia) {
+        permAsked = true;
         navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(s => { s.getTracks().forEach(t => t.stop()); rec.start(); })
+          .then(stream => { stream.getTracks().forEach(t => t.stop()); rec.start(); })
           .catch(() => rec.start());
       } else {
         rec.start();
       }
     });
 
-    rec.onstart  = () => { listening = true;  mic.classList.add('on');    statusTxt.textContent = '🎤 Listening...'; };
-    rec.onend    = () => { listening = false; mic.classList.remove('on'); statusTxt.textContent = 'Online & ready'; };
-    rec.onerror  = e => {
-      listening = false; mic.classList.remove('on');
-      if (e.error === 'not-allowed') addBot('Mic access denied. Please allow microphone in browser settings.');
+    rec.onstart = () => {
+      listening = true;
+      micBtn.classList.add('aria-mic-on');
+      setStatus('listening', 'Listening...');
     };
-    rec.onresult = e => { const t = e.results[0][0].transcript.trim(); if (t) send(t); };
+
+    rec.onend = () => {
+      listening = false;
+      micBtn.classList.remove('aria-mic-on');
+      if (!busy) setStatus('idle', 'Online');
+    };
+
+    rec.onerror = e => {
+      listening = false;
+      micBtn.classList.remove('aria-mic-on');
+      if (!busy) setStatus('idle', 'Online');
+      if (e.error === 'not-allowed') {
+        addBot('Microphone access was denied. Please allow microphone access in your browser settings.');
+      }
+    };
+
+    rec.onresult = e => {
+      const transcript = e.results[0][0].transcript.trim();
+      if (transcript) {
+        textInput.value = transcript;
+        send(transcript).then(unlock);
+      }
+    };
   }
 
 })();
