@@ -8,7 +8,6 @@
   'use strict';
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
-  
 
   /* ================================================================
      HOLOGRAM BALL — Canvas Renderer
@@ -19,9 +18,9 @@
       this.canvas  = canvas;
       this.ctx     = canvas.getContext('2d');
       this.state   = 'idle';
-      this.ry      = 0;   // rotation angle Y
-      this.rx      = 0.3; // slight tilt
-      this.amp     = 0;   // current amplitude (for speaking)
+      this.ry      = 0;
+      this.rx      = 0.3;
+      this.amp     = 0;
       this.targetAmp = 0;
       this.frame   = 0;
       this.listenPulse = 0;
@@ -37,7 +36,7 @@
 
     _genDots(n) {
       const pts = [];
-      const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
+      const phi = Math.PI * (3 - Math.sqrt(5));
       for (let i = 0; i < n; i++) {
         const y    = 1 - (i / (n - 1)) * 2;
         const r    = Math.sqrt(1 - y * y);
@@ -54,10 +53,8 @@
     }
 
     _rotate(x, y, z) {
-      // Y axis
       const x1 =  x * Math.cos(this.ry) + z * Math.sin(this.ry);
       const z1 = -x * Math.sin(this.ry) + z * Math.cos(this.ry);
-      // X axis
       const y2 =  y * Math.cos(this.rx) - z1 * Math.sin(this.rx);
       const z2 =  y * Math.sin(this.rx) + z1 * Math.cos(this.rx);
       return { x: x1, y: y2, z: z2 };
@@ -74,17 +71,14 @@
 
       ctx.clearRect(0, 0, W, H);
 
-      // ── Smooth amplitude ──
       this.amp += (this.targetAmp - this.amp) * 0.08;
 
-      // ── State-specific rotation speeds ──
       let rySpeed = 0.004;
       if (this.state === 'thinking') rySpeed = 0.018;
       if (this.state === 'speaking') rySpeed = 0.008 + this.amp * 0.012;
       if (this.state === 'listening') rySpeed = 0.006;
       this.ry += rySpeed;
 
-      // ── Outer glow ──
       const glowR = R * (1.5 + this.amp * 0.25);
       const outerGlow = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, glowR);
       if (this.state === 'listening') {
@@ -105,14 +99,13 @@
       ctx.fillStyle = outerGlow;
       ctx.fillRect(0, 0, W, H);
 
-      // ── Sphere dots ──
       for (const pt of this.sphereDots) {
         const r  = this._rotate(pt.x, pt.y, pt.z);
         const px = cx + r.x * R;
         const py = cy - r.y * R;
-        const depth = (r.z + 1) / 2; // 0..1
+        const depth = (r.z + 1) / 2;
 
-        if (r.z < -0.1) continue; // hide back half mostly
+        if (r.z < -0.1) continue;
 
         const dotAlpha  = depth * 0.55;
         const dotRadius = 1.1 + depth * 0.9;
@@ -128,12 +121,10 @@
         ctx.fill();
       }
 
-      // ── Orbital rings ──
       for (let i = 0; i < this.rings.length; i++) {
         const ring = this.rings[i];
         ring.angle += ring.speed * (this.state === 'thinking' ? 2.5 : 1);
 
-        const tiltCos = Math.cos(ring.tilt);
         const rX = R * 1.05;
         const rY = R * 1.05 * Math.abs(Math.sin(ring.tilt));
 
@@ -141,7 +132,6 @@
         ctx.translate(cx, cy);
         ctx.rotate(ring.angle);
 
-        // Speaking pulse
         const ringPulse = this.state === 'speaking'
           ? 1 + Math.sin(this.frame * 0.18 + i * 2.1) * 0.12 * this.amp
           : 1;
@@ -160,7 +150,6 @@
         ctx.lineWidth   = 1;
         ctx.stroke();
 
-        // Bright point moving on ring
         const dotTheta = ring.angle * 3.1;
         const dX = Math.cos(dotTheta) * rX;
         const dY = Math.sin(dotTheta) * rY;
@@ -176,7 +165,6 @@
         ctx.restore();
       }
 
-      // ── Core glow ──
       let coreAlpha = 0.55 + 0.05 * Math.sin(this.frame * 0.04);
       if (this.state === 'speaking')  coreAlpha = 0.6 + this.amp * 0.35;
       if (this.state === 'listening') coreAlpha = 0.55 + 0.1 * Math.sin(this.frame * 0.15);
@@ -208,12 +196,11 @@
       ctx.fillStyle = core;
       ctx.fill();
 
-      // ── Listening pulse rings ──
       if (this.state === 'listening') {
         this.listenPulse = (this.listenPulse + 0.025) % 1;
         for (let p = 0; p < 3; p++) {
-          const t     = (this.listenPulse + p / 3) % 1;
-          const pR    = R * 1.1 + t * R * 0.8;
+          const t      = (this.listenPulse + p / 3) % 1;
+          const pR     = R * 1.1 + t * R * 0.8;
           const pAlpha = (1 - t) * 0.25;
           ctx.beginPath();
           ctx.arc(cx, cy, pR, 0, Math.PI * 2);
@@ -223,7 +210,6 @@
         }
       }
 
-      // ── Thinking orbit dots ──
       if (this.state === 'thinking') {
         this.thinkAngle += 0.05;
         for (let d = 0; d < 5; d++) {
@@ -251,18 +237,16 @@
      BUILD HTML
      ================================================================ */
 
-  // Trigger button
   const trigger = document.createElement('div');
   trigger.id = 'aria-trigger';
   trigger.title = 'Chat with ARIA';
   trigger.innerHTML = `
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5Z"/>
-    <path d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25Z"/>
-    <path d="M5 17L5.5 18.5L7 19L5.5 19.5L5 21L4.5 19.5L3 19L4.5 18.5Z"/>
-  </svg>`;
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5Z"/>
+      <path d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25Z"/>
+      <path d="M5 17L5.5 18.5L7 19L5.5 19.5L5 21L4.5 19.5L3 19L4.5 18.5Z"/>
+    </svg>`;
 
-  // Overlay
   const overlay = document.createElement('div');
   overlay.id = 'aria-overlay';
   overlay.setAttribute('role', 'dialog');
@@ -270,7 +254,6 @@
   overlay.innerHTML = `
     <div id="aria-container">
 
-      <!-- HEADER -->
       <div id="aria-header">
         <div class="aria-status-dot" id="aria-dot"></div>
         <div class="aria-header-info">
@@ -286,10 +269,8 @@
         </button>
       </div>
 
-      <!-- BODY -->
       <div id="aria-body">
 
-        <!-- LEFT: Hologram Ball -->
         <div id="aria-left">
           <canvas id="aria-canvas" width="200" height="200"></canvas>
           <div class="aria-ball-info">
@@ -298,7 +279,6 @@
           </div>
         </div>
 
-        <!-- RIGHT: Chat -->
         <div id="aria-right">
           <div id="aria-messages" role="log" aria-live="polite"></div>
 
@@ -356,11 +336,10 @@
   const canvas      = document.getElementById('aria-canvas');
 
   /* ── INIT BALL ── */
-  // Resize canvas for crisp rendering
-  const dpr = window.devicePixelRatio || 1;
+  const dpr      = window.devicePixelRatio || 1;
   const ballSize = window.innerWidth <= 640 ? 130 : 200;
-  canvas.width  = ballSize * dpr;
-  canvas.height = ballSize * dpr;
+  canvas.width   = ballSize * dpr;
+  canvas.height  = ballSize * dpr;
   canvas.style.width  = ballSize + 'px';
   canvas.style.height = ballSize + 'px';
   canvas.getContext('2d').scale(dpr, dpr);
@@ -368,20 +347,18 @@
   const ball = new HologramBall(canvas);
 
   /* ── SESSION STATE ── */
-  let isOpen    = false;
-  let greeted   = false;
-  let busy      = false;
-  let chatHistory = []; // sliding window — max 4 items (last 2 exchanges)
+  let isOpen      = false;
+  let greeted     = false;
+  let busy        = false;
+  let chatHistory = [];
 
   /* ── STATUS HELPER ── */
   function setStatus(state, text) {
-    // Dot
     dot.className = 'aria-status-dot';
     if (state === 'listening') dot.classList.add('aria-dot-listening');
     if (state === 'thinking')  dot.classList.add('aria-dot-thinking');
     if (state === 'speaking')  dot.classList.add('aria-dot-speaking');
 
-    // Label
     statusLabel.className = '';
     statusLabel.id = 'aria-status-label';
     if (state === 'listening') statusLabel.classList.add('aria-status-listening');
@@ -389,8 +366,6 @@
     if (state === 'speaking')  statusLabel.classList.add('aria-status-speaking');
 
     statusLabel.textContent = text;
-
-    // Ball
     ball.setState(state === 'idle' ? 'idle' : state);
   }
 
@@ -441,7 +416,7 @@
   /* ── ADD MESSAGES ── */
   function addBot(html) {
     removeTyping();
-    const d  = document.createElement('div');
+    const d = document.createElement('div');
     d.className = 'aria-msg aria-bot';
     d.innerHTML = `
       <div class="aria-bubble">${html}</div>
@@ -451,7 +426,10 @@
   }
 
   function addUser(text) {
-    suggestions.style.display = 'none';
+    /* FIX 1 — delay hiding suggestions by 300ms so Android speech
+       isn't cancelled by the sudden DOM change */
+    setTimeout(() => { suggestions.style.display = 'none'; }, 300);
+
     const d = document.createElement('div');
     d.className = 'aria-msg aria-user';
     const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -480,7 +458,6 @@
   /* ── HISTORY MANAGEMENT ── */
   function pushHistory(role, content) {
     chatHistory.push({ role, content });
-    // Keep only last 4 messages (2 user + 2 assistant = 2 exchanges)
     if (chatHistory.length > 4) chatHistory = chatHistory.slice(-4);
   }
 
@@ -511,7 +488,6 @@
     showTyping();
     setStatus('thinking', 'Thinking...');
 
-    // Push user message to history BEFORE the API call
     pushHistory('user', text);
 
     try {
@@ -520,7 +496,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          history: chatHistory.slice(0, -1) // send history without current message (worker adds it)
+          history: chatHistory.slice(0, -1)
         })
       });
 
@@ -531,7 +507,6 @@
       const data  = await res.json();
       const reply = data.reply || "I seem to be having a moment — please try again.";
 
-      // Push ARIA reply to history
       pushHistory('assistant', reply);
 
       addBot(reply);
@@ -569,14 +544,13 @@
   /* ================================================================
      SPEECH SYNTHESIS — Chunked + Chrome keepAlive fix
      ================================================================ */
-  let voice      = null;
-  let speaking   = false;
-  let speechQueue = [];
+  let voice             = null;
+  let speaking          = false;
+  let speechQueue       = [];
   let keepAliveInterval = null;
 
   function loadVoice() {
     const all  = window.speechSynthesis.getVoices();
-    // Priority list — prefer neural/online voices
     const pref = [
       'Microsoft Aria Online (Natural)',
       'Microsoft Aria Online',
@@ -585,21 +559,20 @@
       'Microsoft Jenny Online',
       'Microsoft Jenny',
       'Google UK English Female',
-      'Samantha',        // macOS
-      'Karen',           // macOS AU
-      'Moira',           // macOS IE
-      'Microsoft Zira',  // Windows fallback
+      'Samantha',
+      'Karen',
+      'Moira',
+      'Microsoft Zira',
     ];
     for (const name of pref) {
       const v = all.find(v => v.name === name || v.name.startsWith(name));
       if (v) { voice = v; return; }
     }
-    // Generic fallbacks
     voice =
-      all.find(v => /aria/i.test(v.name)) ||
-      all.find(v => /jenny/i.test(v.name)) ||
+      all.find(v => /aria/i.test(v.name))   ||
+      all.find(v => /jenny/i.test(v.name))  ||
       all.find(v => /female/i.test(v.name)) ||
-      all.find(v => v.lang === 'en-GB') ||
+      all.find(v => v.lang === 'en-GB')     ||
       all.find(v => v.lang && v.lang.startsWith('en')) ||
       null;
   }
@@ -618,10 +591,8 @@
 
     stopSpeaking();
 
-    // Clean HTML tags
     const clean = rawText.replace(/<[^>]+>/g, '').trim();
 
-    // Split into sentences — handles . ! ? and ellipsis
     const chunks = clean
       .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
       .map(s => s.trim())
@@ -650,10 +621,7 @@
     utt.volume = 1;
     if (voice) utt.voice = voice;
 
-    utt.onend = () => {
-      _speakNext();
-    };
-
+    utt.onend  = () => { _speakNext(); };
     utt.onerror = (e) => {
       if (e.error === 'interrupted' || e.error === 'canceled') return;
       console.warn('Speech error:', e.error);
@@ -662,7 +630,6 @@
 
     window.speechSynthesis.speak(utt);
 
-    // Chrome keepAlive — prevents browser killing speech after ~15s
     if (keepAliveInterval) clearInterval(keepAliveInterval);
     keepAliveInterval = setInterval(() => {
       if (!window.speechSynthesis.speaking) {
@@ -703,8 +670,9 @@
     rec.maxAlternatives = 1;
     rec.continuous      = false;
 
-    let listening  = false;
-    let permAsked  = false;
+    let listening   = false;
+    let permAsked   = false;
+    let resultFired = false; /* FIX 2 — prevents Chrome firing onresult multiple times */
 
     micBtn.addEventListener('click', () => {
       if (busy) return;
@@ -721,7 +689,8 @@
     });
 
     rec.onstart = () => {
-      listening = true;
+      listening   = true;
+      resultFired = false; /* FIX 2 — reset on every new recording session */
       micBtn.classList.add('aria-mic-on');
       setStatus('listening', 'Listening...');
     };
@@ -740,3 +709,16 @@
         addBot('Microphone access was denied. Please allow microphone access in your browser settings.');
       }
     };
+
+    rec.onresult = e => {
+      if (resultFired) return; /* FIX 2 — ignore any duplicate results Chrome sends */
+      resultFired = true;
+      const transcript = e.results[0][0].transcript.trim();
+      if (transcript) {
+        textInput.value = transcript;
+        send(transcript).then(unlock);
+      }
+    };
+  }
+
+})();
