@@ -2,8 +2,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
 
 /* ================================================================
    ARIA — Mohak Mittal's AI Portfolio Assistant
-   Professional Hollywood-style Interface
-   Hologram ball + Chunked speech + Sliding window memory
    ================================================================ */
 
 (function () {
@@ -17,8 +15,7 @@ import { ttsSpeak, ttsStop } from './tts.js';
     .catch(() => {});
 
   /* ================================================================
-     HOLOGRAM BALL — Canvas Renderer
-     States: idle | listening | thinking | speaking
+     HOLOGRAM BALL
      ================================================================ */
   class HologramBall {
     constructor(canvas) {
@@ -77,7 +74,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
       const R   = Math.min(W, H) * 0.33;
 
       ctx.clearRect(0, 0, W, H);
-
       this.amp += (this.targetAmp - this.amp) * 0.08;
 
       let rySpeed = 0.004;
@@ -111,17 +107,13 @@ import { ttsSpeak, ttsStop } from './tts.js';
         const px = cx + r.x * R;
         const py = cy - r.y * R;
         const depth = (r.z + 1) / 2;
-
         if (r.z < -0.1) continue;
-
         const dotAlpha  = depth * 0.55;
         const dotRadius = 1.1 + depth * 0.9;
-
         let dotColor = `rgba(14,165,233,${dotAlpha})`;
         if (this.state === 'listening') dotColor = `rgba(52,211,153,${dotAlpha})`;
         if (this.state === 'thinking')  dotColor = `rgba(251,191,36,${dotAlpha * 0.9})`;
         if (this.state === 'speaking')  dotColor = `rgba(167,139,250,${dotAlpha + this.amp * 0.2})`;
-
         ctx.beginPath();
         ctx.arc(px, py, dotRadius, 0, Math.PI * 2);
         ctx.fillStyle = dotColor;
@@ -131,36 +123,28 @@ import { ttsSpeak, ttsStop } from './tts.js';
       for (let i = 0; i < this.rings.length; i++) {
         const ring = this.rings[i];
         ring.angle += ring.speed * (this.state === 'thinking' ? 2.5 : 1);
-
         const rX = R * 1.05;
         const rY = R * 1.05 * Math.abs(Math.sin(ring.tilt));
-
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(ring.angle);
-
         const ringPulse = this.state === 'speaking'
           ? 1 + Math.sin(this.frame * 0.18 + i * 2.1) * 0.12 * this.amp
           : 1;
-
         let baseAlpha = 0.35;
         if (this.state === 'listening') baseAlpha = 0.5;
         if (this.state === 'thinking')  baseAlpha = 0.28;
         if (this.state === 'speaking')  baseAlpha = 0.3 + this.amp * 0.25;
-
         const c = ring.color.replace('VAL', String(baseAlpha));
-
         ctx.scale(ringPulse, ringPulse);
         ctx.beginPath();
         ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
         ctx.strokeStyle = c;
         ctx.lineWidth   = 1;
         ctx.stroke();
-
         const dotTheta = ring.angle * 3.1;
         const dX = Math.cos(dotTheta) * rX;
         const dY = Math.sin(dotTheta) * rY;
-
         ctx.beginPath();
         ctx.arc(dX, dY, 2.5, 0, Math.PI * 2);
         let dotC = '#0ea5e9';
@@ -243,7 +227,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
   /* ================================================================
      BUILD HTML
      ================================================================ */
-
   const trigger = document.createElement('div');
   trigger.id = 'aria-trigger';
   trigger.title = 'Chat with ARIA';
@@ -260,7 +243,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
   overlay.setAttribute('aria-modal', 'true');
   overlay.innerHTML = `
     <div id="aria-container">
-
       <div id="aria-header">
         <div class="aria-status-dot" id="aria-dot"></div>
         <div class="aria-header-info">
@@ -275,9 +257,7 @@ import { ttsSpeak, ttsStop } from './tts.js';
           </svg>
         </button>
       </div>
-
       <div id="aria-body">
-
         <div id="aria-left">
           <canvas id="aria-canvas" width="200" height="200"></canvas>
           <div class="aria-ball-info">
@@ -285,17 +265,14 @@ import { ttsSpeak, ttsStop } from './tts.js';
             <div class="aria-ball-tagline">AI · v2.0 · Active</div>
           </div>
         </div>
-
         <div id="aria-right">
           <div id="aria-messages" role="log" aria-live="polite"></div>
-
           <div id="aria-suggestions">
             <button class="aria-chip">What can Mohak build?</button>
             <button class="aria-chip">Tell me about his projects</button>
             <button class="aria-chip">What are his skills?</button>
             <button class="aria-chip">How can I contact him?</button>
           </div>
-
           <div id="aria-input-area">
             <button id="aria-mic-btn" title="Voice input" aria-label="Toggle microphone">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -323,7 +300,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
             </button>
           </div>
         </div>
-
       </div>
     </div>`;
 
@@ -331,7 +307,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
   document.body.appendChild(overlay);
 
   /* ── ELEMENT REFS ── */
-  const container   = document.getElementById('aria-container');
   const dot         = document.getElementById('aria-dot');
   const statusLabel = document.getElementById('aria-status-label');
   const closeBtn    = document.getElementById('aria-close');
@@ -365,13 +340,11 @@ import { ttsSpeak, ttsStop } from './tts.js';
     if (state === 'listening') dot.classList.add('aria-dot-listening');
     if (state === 'thinking')  dot.classList.add('aria-dot-thinking');
     if (state === 'speaking')  dot.classList.add('aria-dot-speaking');
-
     statusLabel.className = '';
     statusLabel.id = 'aria-status-label';
     if (state === 'listening') statusLabel.classList.add('aria-status-listening');
     if (state === 'thinking')  statusLabel.classList.add('aria-status-thinking');
     if (state === 'speaking')  statusLabel.classList.add('aria-status-speaking');
-
     statusLabel.textContent = text;
     ball.setState(state === 'idle' ? 'idle' : state);
   }
@@ -381,7 +354,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
     overlay.classList.add('aria-open');
     trigger.style.display = 'none';
     isOpen = true;
-
     if (!greeted) {
       greeted = true;
       setTimeout(() => {
@@ -394,7 +366,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
         addBot(`${greet}. I'm ARIA, Mohak Mittal's AI assistant. Ask me anything about his work, skills, or how to get in touch.`);
       }, 400);
     }
-
     setTimeout(() => textInput.focus(), 500);
   }
 
@@ -415,12 +386,11 @@ import { ttsSpeak, ttsStop } from './tts.js';
     if (e.key === 'Escape' && isOpen) closeAria();
   });
 
-  /* ── TIME HELPER ── */
+  /* ── HELPERS ── */
   function nowTime() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  /* ── ADD MESSAGES ── */
   function addBot(html) {
     removeTyping();
     const d = document.createElement('div');
@@ -434,7 +404,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
 
   function addUser(text) {
     setTimeout(() => { suggestions.style.display = 'none'; }, 300);
-
     const d = document.createElement('div');
     d.className = 'aria-msg aria-user';
     const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -460,13 +429,11 @@ import { ttsSpeak, ttsStop } from './tts.js';
     if (typingEl) { typingEl.remove(); typingEl = null; }
   }
 
-  /* ── HISTORY MANAGEMENT ── */
   function pushHistory(role, content) {
     chatHistory.push({ role, content });
     if (chatHistory.length > 4) chatHistory = chatHistory.slice(-4);
   }
 
-  /* ── LOCK / UNLOCK ── */
   function lock() {
     busy = true;
     textInput.disabled = true;
@@ -492,7 +459,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
     textInput.value = '';
     showTyping();
     setStatus('thinking', 'Thinking...');
-
     pushHistory('user', text);
 
     try {
@@ -507,15 +473,14 @@ import { ttsSpeak, ttsStop } from './tts.js';
       });
 
       removeTyping();
-
       if (!res.ok) throw new Error('HTTP ' + res.status);
 
       const data  = await res.json();
       const reply = data.reply || "I seem to be having a moment — please try again.";
 
       pushHistory('assistant', reply);
-
       addBot(reply);
+
       ttsSpeak(reply,
         () => setStatus('speaking', 'Speaking...'),
         () => { setStatus('idle', 'Online'); unlock(); }
@@ -572,7 +537,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
     micBtn.addEventListener('click', () => {
       if (busy) return;
       if (listening) { rec.stop(); return; }
-
       if (!permAsked && navigator.mediaDevices?.getUserMedia) {
         permAsked = true;
         navigator.mediaDevices.getUserMedia({ audio: true })
