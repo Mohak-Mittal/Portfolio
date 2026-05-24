@@ -25,7 +25,7 @@ export async function kokoroSpeak(rawText, onDone) {
   if (!tts) { _fallback(text, onDone); return; }
 
   try {
-    const out = await tts(text, { voice: 'af_bella', speed: 1.0 });
+    const out = await tts(text, { voice: 'af_sarah', speed: 1.0 });
 
     const buffer = audioCtx.createBuffer(1, out.audio.length, out.sampling_rate);
     buffer.getChannelData(0).set(out.audio);
