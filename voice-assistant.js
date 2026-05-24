@@ -1,3 +1,5 @@
+import { ttsSpeak, ttsStop } from './tts.js';
+
 /* ================================================================
    ARIA — Mohak Mittal's AI Portfolio Assistant
    Professional Hollywood-style Interface
@@ -9,10 +11,10 @@
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
   let portfolioData = null;
-fetch('./mohak-data.json')
-  .then(r => r.json())
-  .then(d => { portfolioData = d; })
-  .catch(() => {});
+  fetch('./mohak-data.json')
+    .then(r => r.json())
+    .then(d => { portfolioData = d; })
+    .catch(() => {});
 
   /* ================================================================
      HOLOGRAM BALL — Canvas Renderer
@@ -400,7 +402,7 @@ fetch('./mohak-data.json')
     overlay.classList.remove('aria-open');
     trigger.style.display = 'flex';
     isOpen = false;
-    stopSpeaking();
+    ttsStop();
   }
 
   trigger.addEventListener('click', openAria);
@@ -431,8 +433,6 @@ fetch('./mohak-data.json')
   }
 
   function addUser(text) {
-    /* FIX 1 — delay hiding suggestions by 300ms so Android speech
-       isn't cancelled by the sudden DOM change */
     setTimeout(() => { suggestions.style.display = 'none'; }, 300);
 
     const d = document.createElement('div');
@@ -516,7 +516,10 @@ fetch('./mohak-data.json')
       pushHistory('assistant', reply);
 
       addBot(reply);
-      speak(reply);
+      ttsSpeak(reply,
+        () => setStatus('speaking', 'Speaking...'),
+        () => { setStatus('idle', 'Online'); unlock(); }
+      );
 
     } catch (e) {
       removeTyping();
@@ -548,120 +551,6 @@ fetch('./mohak-data.json')
   });
 
   /* ================================================================
-     SPEECH SYNTHESIS — Chunked + Chrome keepAlive fix
-     ================================================================ */
-  let voice             = null;
-  let speaking          = false;
-  let speechQueue       = [];
-  let keepAliveInterval = null;
-
-  function loadVoice() {
-    const all  = window.speechSynthesis.getVoices();
-    const pref = [
-      'Microsoft Aria Online (Natural)',
-      'Microsoft Aria Online',
-      'Microsoft Aria',
-      'Microsoft Jenny Online (Natural)',
-      'Microsoft Jenny Online',
-      'Microsoft Jenny',
-      'Google UK English Female',
-      'Samantha',
-      'Karen',
-      'Moira',
-      'Microsoft Zira',
-    ];
-    for (const name of pref) {
-      const v = all.find(v => v.name === name || v.name.startsWith(name));
-      if (v) { voice = v; return; }
-    }
-    voice =
-      all.find(v => /aria/i.test(v.name))   ||
-      all.find(v => /jenny/i.test(v.name))  ||
-      all.find(v => /female/i.test(v.name)) ||
-      all.find(v => v.lang === 'en-GB')     ||
-      all.find(v => v.lang && v.lang.startsWith('en')) ||
-      null;
-  }
-
-  if (window.speechSynthesis) {
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoice);
-    loadVoice();
-  }
-
-  function speak(rawText) {
-    if (!window.speechSynthesis) {
-      setStatus('idle', 'Online');
-      unlock();
-      return;
-    }
-
-    stopSpeaking();
-
-    const clean = rawText.replace(/<[^>]+>/g, '').trim();
-
-    const chunks = clean
-      .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-
-    if (chunks.length === 0) { unlock(); return; }
-
-    speechQueue = [...chunks];
-    speaking    = true;
-    setStatus('speaking', 'Speaking...');
-
-    _speakNext();
-  }
-
-  function _speakNext() {
-    if (!speaking || speechQueue.length === 0) {
-      _onSpeechDone();
-      return;
-    }
-
-    const chunk = speechQueue.shift();
-    const utt   = new SpeechSynthesisUtterance(chunk);
-
-    utt.rate   = 1.0;
-    utt.pitch  = 1.05;
-    utt.volume = 1;
-    if (voice) utt.voice = voice;
-
-    utt.onend  = () => { _speakNext(); };
-    utt.onerror = (e) => {
-      if (e.error === 'interrupted' || e.error === 'canceled') return;
-      console.warn('Speech error:', e.error);
-      _speakNext();
-    };
-
-    window.speechSynthesis.speak(utt);
-
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
-    keepAliveInterval = setInterval(() => {
-      if (!window.speechSynthesis.speaking) {
-        clearInterval(keepAliveInterval);
-        return;
-      }
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
-    }, 10000);
-  }
-
-  function _onSpeechDone() {
-    speaking = false;
-    if (keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null; }
-    setStatus('idle', 'Online');
-    unlock();
-  }
-
-  function stopSpeaking() {
-    speaking = false;
-    speechQueue = [];
-    if (keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null; }
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-  }
-
-  /* ================================================================
      SPEECH RECOGNITION
      ================================================================ */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -678,7 +567,7 @@ fetch('./mohak-data.json')
 
     let listening   = false;
     let permAsked   = false;
-    let resultFired = false; /* FIX 2 — prevents Chrome firing onresult multiple times */
+    let resultFired = false;
 
     micBtn.addEventListener('click', () => {
       if (busy) return;
@@ -696,7 +585,7 @@ fetch('./mohak-data.json')
 
     rec.onstart = () => {
       listening   = true;
-      resultFired = false; /* FIX 2 — reset on every new recording session */
+      resultFired = false;
       micBtn.classList.add('aria-mic-on');
       setStatus('listening', 'Listening...');
     };
@@ -717,7 +606,7 @@ fetch('./mohak-data.json')
     };
 
     rec.onresult = e => {
-      if (resultFired) return; /* FIX 2 — ignore any duplicate results Chrome sends */
+      if (resultFired) return;
       resultFired = true;
       const transcript = e.results[0][0].transcript.trim();
       if (transcript) {
