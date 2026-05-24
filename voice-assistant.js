@@ -4,7 +4,6 @@
    Hologram ball + Chunked speech + Sliding window memory
    ================================================================ */
 import { kokoroSpeak, kokoroStop } from './tts.js';
-(function () {
   'use strict';
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
