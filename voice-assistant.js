@@ -3,7 +3,7 @@
    Professional Hollywood-style Interface
    Hologram ball + Chunked speech + Sliding window memory
    ================================================================ */
-
+import { kokoroSpeak, kokoroStop } from './tts.js';
 (function () {
   'use strict';
 
@@ -400,7 +400,7 @@ fetch('./mohak-data.json')
     overlay.classList.remove('aria-open');
     trigger.style.display = 'flex';
     isOpen = false;
-    stopSpeaking();
+    kokoroStop();
   }
 
   trigger.addEventListener('click', openAria);
@@ -516,7 +516,8 @@ fetch('./mohak-data.json')
       pushHistory('assistant', reply);
 
       addBot(reply);
-      speak(reply);
+      setStatus('speaking', 'Speaking...');
+kokoroSpeak(reply, () => { setStatus('idle', 'Online'); unlock(); });
 
     } catch (e) {
       removeTyping();
@@ -549,7 +550,7 @@ fetch('./mohak-data.json')
 
   /* ================================================================
      SPEECH SYNTHESIS — Chunked + Chrome keepAlive fix
-     ================================================================ */
+     ================================================================ 
   let voice             = null;
   let speaking          = false;
   let speechQueue       = [];
@@ -660,6 +661,7 @@ fetch('./mohak-data.json')
     if (keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   }
+  */
 
   /* ================================================================
      SPEECH RECOGNITION
