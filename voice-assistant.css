@@ -643,5 +643,5 @@
   }
 }
 
-#aria-overlay, #aria-overlay * { cursor: none !important; }
+#aria-overlay, #aria-overlay * { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7' stroke='%2300f0ff' stroke-width='1.5' fill='none' opacity='0.85'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%2300f0ff'/%3E%3C/svg%3E") 10 10, auto !important; }
 .cursor-glow { z-index: 999999 !important; }

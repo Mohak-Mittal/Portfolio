@@ -1,0 +1,81 @@
+{
+  "name": "Mohak Mittal",
+  "role": "Game Developer & 3D Artist",
+  "location": "Barnala, Punjab, India",
+  "education": "BCA 6th Semester, S.D. College Barnala, Punjabi University Patiala",
+  "goal": "Build his own game studio",
+  "tools_primary": [ "Unreal Engine 5", "Blender" ],
+  "skills": {
+    "game_dev": [ "Unreal Engine 5", "Blueprint Visual Scripting", "Game Design", "Level Design" ],
+    "3d_art": [ "Blender", "3D Modeling", "Sculpting", "Rigging & Animation", "Architectural Visualization", "PBR Workflow" ],
+    "programming": [ "C", "Java", "Python", "HTML", "CSS", "JavaScript" ],
+    "ai_tools": [ "Groq Whisper", "Llama 3.3 70B", "Edge-TTS", "pytesseract" ],
+    "web": [ "HTML", "CSS", "JavaScript", "EmailJS", "Cloudflare Workers" ]
+  },
+  "projects": [
+    {
+      "name": "Checkpoint Car Game",
+      "type": "Game",
+      "engine": "Unreal Engine 5",
+      "tools": [ "Blender", "Blueprint Visual Scripting", "FBX Import Pipeline", "Lumen", "Nanite" ],
+      "category": "Game Development",
+      "status": "Completed",
+      "description": "Open-world car checkpoint driving game. Drive through checkpoints before the timer runs out. Each checkpoint rewards +10 seconds. Built as BCA 6th semester final project.",
+      "features": [ "Car Driving System", "Timer System", "Checkpoint System", "Lumen Global Illumination", "Custom Blender 3D Assets", "Dynamic Weather" ],
+      "youtube": "https://youtu.be/WNKuL6QGoEY"
+    },
+    {
+      "name": "ARIA",
+      "type": "AI Application",
+      "tools": [ "Python", "Groq Whisper", "Llama 3.3 70B", "Edge-TTS", "pyttsx3", "pytesseract" ],
+      "category": "AI / Software",
+      "status": "Completed",
+      "description": "Python-based voice-controlled AI desktop assistant with a playful female personality and game dev expertise. Features speech recognition, AI responses, text-to-speech, screen reading via OCR, and a custom file indexer for the local system.",
+      "features": [ "Voice Control", "AI Brain (Llama 3.3 70B)", "Text-to-Speech", "Screen Reading (OCR)", "Local File Indexer", "Casual Personality" ]
+    },
+    {
+      "name": "ToolZone",
+      "type": "Web Application",
+      "tools": [ "HTML", "CSS", "JavaScript" ],
+      "category": "Web Development",
+      "status": "In Development",
+      "description": "Free online tools platform with a clean white/light theme and blue-purple gradient accents. Monetized via AdSense. Modular file structure with separate tool pages.",
+      "features": [ "Percentage Calculator", "Discount Calculator", "GST Calculator", "Multiple Modes per Tool", "Real-time Calculation", "Mobile Friendly" ]
+    },
+    {
+      "name": "Portfolio Website",
+      "type": "Web Application",
+      "tools": [ "HTML", "CSS", "JavaScript", "EmailJS", "Cloudflare Workers" ],
+      "category": "Web Development",
+      "status": "Completed",
+      "description": "Personal portfolio with a dark neon cyberpunk aesthetic. Features particle network background, project modals, Instagram-style Blender feed, UE5 project showcase, and ARIA AI assistant integration.",
+      "features": [ "Particle Network Background", "Project Modal Carousel", "Blender Instagram Feed", "ARIA AI Assistant", "EmailJS Contact Form", "Fully Responsive" ],
+      "link": "https://mohak-mittal.github.io/Portfolio"
+    },
+    {
+      "name": "Ghost Message Platform",
+      "type": "Web Application",
+      "tools": [ "HTML", "CSS", "JavaScript", "Supabase", "Vercel" ],
+      "category": "Web Development",
+      "status": "Planned",
+      "description": "Anonymous shared dark canvas where typed messages become floating ghosts visible to all visitors in real time.",
+      "features": [ "Anonymous Messaging", "Real-time Shared Canvas", "Floating Ghost Animations", "No Login Required" ]
+    }
+  ],
+  "blender_works": {
+    "count": "10+",
+    "style": "Architectural & Environmental Visualization",
+    "renders": [
+      "Cozy Forest Cabin at Night",
+      "Rainy Forest Manor",
+      "Starlit Urban Walkway",
+      "Urban Corner in Transition"
+    ],
+    "speciality": "Cinematic night scenes, atmospheric lighting, urban and nature environments"
+  },
+  "contact": {
+    "github": "https://github.com/Mohak-Mittal",
+    "portfolio": "https://mohak-mittal.github.io/Portfolio",
+    "contact_form": "Available on the portfolio website"
+  }
+}

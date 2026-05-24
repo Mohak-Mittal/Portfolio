@@ -8,6 +8,11 @@
   'use strict';
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
+  let portfolioData = null;
+fetch('./mohak-data.json')
+  .then(r => r.json())
+  .then(d => { portfolioData = d; })
+  .catch(() => {});
 
   /* ================================================================
      HOLOGRAM BALL — Canvas Renderer
@@ -496,7 +501,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          history: chatHistory.slice(0, -1)
+          history: chatHistory.slice(0, -1),
+          context: portfolioData
         })
       });
 
