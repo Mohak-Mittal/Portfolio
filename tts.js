@@ -1,13 +1,14 @@
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
+import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@1/dist/kokoro.mjs';
 
 let tts       = null;
 let audioCtx  = null;
 let curSource = null;
 
-// Silent background preload — starts the moment the page loads
+// Silent background preload
 (async () => {
   try {
-    tts = await pipeline('text-to-speech', 'onnx-community/Kokoro-82M-v1.0', { dtype: 'fp32' });
+    tts = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-ONNX', { dtype: 'q8' });
+    console.log('[ARIA TTS] Kokoro loaded successfully');
   } catch (e) {
     console.warn('[ARIA TTS] Kokoro failed to load, will use fallback:', e.message);
   }
@@ -25,10 +26,10 @@ export async function kokoroSpeak(rawText, onDone) {
   if (!tts) { _fallback(text, onDone); return; }
 
   try {
-    const out = await tts(text, { voice: 'af_sarah', speed: 1.0 });
+    const audio = await tts.generate(text, { voice: 'af_bella' });
 
-    const buffer = audioCtx.createBuffer(1, out.audio.length, out.sampling_rate);
-    buffer.getChannelData(0).set(out.audio);
+    const buffer = audioCtx.createBuffer(1, audio.audio.length, audio.sampling_rate);
+    buffer.getChannelData(0).set(audio.audio);
 
     curSource = audioCtx.createBufferSource();
     curSource.buffer = buffer;
@@ -51,9 +52,16 @@ export function kokoroStop() {
 
 function _fallback(text, onDone) {
   if (!window.speechSynthesis) { if (onDone) onDone(); return; }
+  const voices = window.speechSynthesis.getVoices();
+  const femaleVoice =
+    voices.find(v => /zira|susan|hazel|female|woman|girl|samantha|karen|moira|fiona|victoria|aria|jenny/i.test(v.name)) ||
+    voices.find(v => v.lang === 'en-GB') ||
+    voices.find(v => v.lang && v.lang.startsWith('en')) ||
+    null;
   const utt = new SpeechSynthesisUtterance(text);
   utt.rate  = 1.0;
-  utt.pitch = 1.05;
+  utt.pitch = 1.1;
+  if (femaleVoice) utt.voice = femaleVoice;
   utt.onend = utt.onerror = () => { if (onDone) onDone(); };
   window.speechSynthesis.speak(utt);
 }
