@@ -334,7 +334,7 @@ import { ttsSpeak, ttsStop } from './tts.js';
   let busy        = false;
   let chatHistory = [];
 
-  /* ── STATUS HELPER ── */
+  /* ── STATUS ── */
   function setStatus(state, text) {
     dot.className = 'aria-status-dot';
     if (state === 'listening') dot.classList.add('aria-dot-listening');
@@ -381,7 +381,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeAria();
   });
-
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && isOpen) closeAria();
   });
@@ -395,9 +394,7 @@ import { ttsSpeak, ttsStop } from './tts.js';
     removeTyping();
     const d = document.createElement('div');
     d.className = 'aria-msg aria-bot';
-    d.innerHTML = `
-      <div class="aria-bubble">${html}</div>
-      <div class="aria-msg-meta">ARIA · ${nowTime()}</div>`;
+    d.innerHTML = `<div class="aria-bubble">${html}</div><div class="aria-msg-meta">ARIA · ${nowTime()}</div>`;
     messages.appendChild(d);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -407,15 +404,12 @@ import { ttsSpeak, ttsStop } from './tts.js';
     const d = document.createElement('div');
     d.className = 'aria-msg aria-user';
     const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    d.innerHTML = `
-      <div class="aria-bubble">${safe}</div>
-      <div class="aria-msg-meta">You · ${nowTime()}</div>`;
+    d.innerHTML = `<div class="aria-bubble">${safe}</div><div class="aria-msg-meta">You · ${nowTime()}</div>`;
     messages.appendChild(d);
     messages.scrollTop = messages.scrollHeight;
   }
 
   let typingEl = null;
-
   function showTyping() {
     removeTyping();
     typingEl = document.createElement('div');
@@ -424,7 +418,6 @@ import { ttsSpeak, ttsStop } from './tts.js';
     messages.appendChild(typingEl);
     messages.scrollTop = messages.scrollHeight;
   }
-
   function removeTyping() {
     if (typingEl) { typingEl.remove(); typingEl = null; }
   }
@@ -449,7 +442,7 @@ import { ttsSpeak, ttsStop } from './tts.js';
     textInput.focus();
   }
 
-  /* ── SEND MESSAGE ── */
+  /* ── SEND ── */
   async function send(text) {
     text = (text || '').trim();
     if (!text || busy) return;
@@ -495,23 +488,15 @@ import { ttsSpeak, ttsStop } from './tts.js';
     }
   }
 
-  /* ── EVENT LISTENERS ── */
-  sendBtn.addEventListener('click', () => {
-    send(textInput.value).then(unlock);
-  });
-
+  /* ── EVENTS ── */
+  sendBtn.addEventListener('click', () => { send(textInput.value).then(unlock); });
   textInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send(textInput.value).then(unlock);
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(textInput.value).then(unlock); }
   });
-
   suggestions.querySelectorAll('.aria-chip').forEach(btn => {
     btn.addEventListener('click', function () {
       if (busy) return;
-      const q = this.textContent.trim();
-      send(q).then(unlock);
+      send(this.textContent.trim()).then(unlock);
     });
   });
 
@@ -547,36 +532,19 @@ import { ttsSpeak, ttsStop } from './tts.js';
       }
     });
 
-    rec.onstart = () => {
-      listening   = true;
-      resultFired = false;
-      micBtn.classList.add('aria-mic-on');
-      setStatus('listening', 'Listening...');
-    };
-
-    rec.onend = () => {
+    rec.onstart  = () => { listening = true; resultFired = false; micBtn.classList.add('aria-mic-on'); setStatus('listening', 'Listening...'); };
+    rec.onend    = () => { listening = false; micBtn.classList.remove('aria-mic-on'); if (!busy) setStatus('idle', 'Online'); };
+    rec.onerror  = e => {
       listening = false;
       micBtn.classList.remove('aria-mic-on');
       if (!busy) setStatus('idle', 'Online');
+      if (e.error === 'not-allowed') addBot('Microphone access was denied. Please allow microphone access in your browser settings.');
     };
-
-    rec.onerror = e => {
-      listening = false;
-      micBtn.classList.remove('aria-mic-on');
-      if (!busy) setStatus('idle', 'Online');
-      if (e.error === 'not-allowed') {
-        addBot('Microphone access was denied. Please allow microphone access in your browser settings.');
-      }
-    };
-
     rec.onresult = e => {
       if (resultFired) return;
       resultFired = true;
       const transcript = e.results[0][0].transcript.trim();
-      if (transcript) {
-        textInput.value = transcript;
-        send(transcript).then(unlock);
-      }
+      if (transcript) { textInput.value = transcript; send(transcript).then(unlock); }
     };
   }
 
