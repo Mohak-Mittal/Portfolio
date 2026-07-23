@@ -28,7 +28,11 @@
     if (!window.speechSynthesis) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
-    const preferredNames = ['Google UK English Female', 'Samantha', 'Zira', 'Victoria', 'Karen', 'Moira', 'Tessa', 'Susan', 'Fiona'];
+    const preferredNames = [
+      'Google UK English Female', 'Google US English Female',
+      'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Zira', 'Microsoft Michelle',
+      'Samantha', 'Victoria', 'Karen', 'Moira', 'Tessa', 'Susan', 'Fiona', 'Ava', 'Allison', 'Serena'
+    ];
     for (const name of preferredNames) {
       const v = voices.find(v => v.name.includes(name));
       if (v) return v;
