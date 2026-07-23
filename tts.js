@@ -13,19 +13,25 @@ function pickFemaleVoice() {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
 
+  // IMPORTANT: only ever pick LOCAL (offline) voices. Chrome's "Google ..."
+  // voices stream over the network — if that request is blocked by any
+  // extension, firewall, or network policy, speak() fails completely
+  // silently (no error). Local voices always work, no network needed.
+  const localVoices = voices.filter(v => v.localService);
+  const pool = localVoices.length ? localVoices : voices;
+
   const preferredNames = [
-    'Google UK English Female', 'Google US English Female',
-    'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Zira', 'Microsoft Michelle',
+    'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Zira', 'Microsoft Michelle', 'Microsoft Hazel', 'Microsoft Susan',
     'Samantha', 'Victoria', 'Karen', 'Moira', 'Tessa', 'Susan', 'Fiona', 'Ava', 'Allison', 'Serena'
   ];
   for (const name of preferredNames) {
-    const v = voices.find(v => v.name.includes(name));
+    const v = pool.find(v => v.name.includes(name));
     if (v) return v;
   }
 
-  return voices.find(v => /female/i.test(v.name) && v.lang.startsWith('en'))
-      || voices.find(v => v.lang.startsWith('en'))
-      || voices[0];
+  return pool.find(v => /female/i.test(v.name) && v.lang.startsWith('en'))
+      || pool.find(v => v.lang.startsWith('en'))
+      || pool[0];
 }
 
 function ensureVoicesLoaded() {
