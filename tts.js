@@ -18,6 +18,26 @@ async function preload() {
 
 preload();
 
+// Warm up the browser voice list early (some browsers load it async)
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+}
+
+function _pickFemaleVoice() {
+  if (!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const preferredNames = ['Google UK English Female', 'Samantha', 'Zira', 'Victoria', 'Karen', 'Moira', 'Tessa', 'Susan', 'Fiona'];
+  for (const name of preferredNames) {
+    const v = voices.find(v => v.name.includes(name));
+    if (v) return v;
+  }
+  return voices.find(v => /female/i.test(v.name) && v.lang.startsWith('en'))
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0];
+}
+
 export async function ttsSpeak(text, onStart, onDone) {
   ttsStop();
   const clean = text.replace(/<[^>]+>/g, '').trim();
@@ -55,7 +75,9 @@ export function ttsStop() {
 function _fallback(text, onDone) {
   if (!window.speechSynthesis) { if (onDone) onDone(); return; }
   const utt = new SpeechSynthesisUtterance(text);
-  utt.rate = 1.0; utt.pitch = 1.05;
+  utt.rate = 1.0; utt.pitch = 1.1;
+  const voice = _pickFemaleVoice();
+  if (voice) utt.voice = voice;
   utt.onend = utt.onerror = () => { if (onDone) onDone(); };
   window.speechSynthesis.speak(utt);
 }

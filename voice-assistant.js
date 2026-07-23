@@ -7,6 +7,11 @@
 
   const WORKER = 'https://empty-pond-54e9.mittalmohak0.workers.dev';
 
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+  }
+
   /* ── DYNAMIC TTS IMPORT — non-blocking, ARIA works even if it fails ── */
   let _ttsSpeak = null;
   let _ttsStop  = null;
@@ -19,6 +24,20 @@
     console.warn('[ARIA] TTS module failed, using browser fallback:', e.message);
   });
 
+  function _pickFemaleVoice() {
+    if (!window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const preferredNames = ['Google UK English Female', 'Samantha', 'Zira', 'Victoria', 'Karen', 'Moira', 'Tessa', 'Susan', 'Fiona'];
+    for (const name of preferredNames) {
+      const v = voices.find(v => v.name.includes(name));
+      if (v) return v;
+    }
+    return voices.find(v => /female/i.test(v.name) && v.lang.startsWith('en'))
+        || voices.find(v => v.lang.startsWith('en'))
+        || voices[0];
+  }
+
   function ttsSpeak(text, onStart, onDone) {
     if (_ttsSpeak) {
       _ttsSpeak(text, onStart, onDone);
@@ -26,7 +45,9 @@
       if (onStart) onStart();
       if (window.speechSynthesis) {
         const utt = new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g, '').trim());
-        utt.rate = 1.0; utt.pitch = 1.05;
+        utt.rate = 1.0; utt.pitch = 1.1;
+        const voice = _pickFemaleVoice();
+        if (voice) utt.voice = voice;
         utt.onend = utt.onerror = () => { if (onDone) onDone(); };
         window.speechSynthesis.speak(utt);
       } else {
@@ -403,12 +424,12 @@
     }
   }
 
-  sendBtn.addEventListener('click', () => { send(textInput.value).then(unlock); });
+  sendBtn.addEventListener('click', () => { send(textInput.value); });
   textInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(textInput.value).then(unlock); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(textInput.value); }
   });
   suggestions.querySelectorAll('.aria-chip').forEach(btn => {
-    btn.addEventListener('click', function () { if (busy) return; send(this.textContent.trim()).then(unlock); });
+    btn.addEventListener('click', function () { if (busy) return; send(this.textContent.trim()); });
   });
 
   /* ================================================================
@@ -447,7 +468,7 @@
       if (resultFired) return;
       resultFired = true;
       const transcript = e.results[0][0].transcript.trim();
-      if (transcript) { textInput.value = transcript; send(transcript).then(unlock); }
+      if (transcript) { textInput.value = transcript; send(transcript); }
     };
   }
 

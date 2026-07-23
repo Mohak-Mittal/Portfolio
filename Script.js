@@ -329,19 +329,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================
-// PROJECT CARD MOUSE GLOW
-// ============================================
-document.querySelectorAll('.project-card').forEach(card => {
-  card.addEventListener('mousemove', (e) => {
-    const r = card.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width)  * 100;
-    const y = ((e.clientY - r.top)  / r.height) * 100;
-    const g = card.querySelector('.project-glow');
-    if (g) g.style.background = 'radial-gradient(circle at ' + x + '% ' + y + '%, rgba(0,240,255,0.09) 0%, transparent 58%)';
-  });
-});
-
-// ============================================
 // SKILL BARS
 // ============================================
 function triggerSkillBars() {
