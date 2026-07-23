@@ -410,9 +410,20 @@
 
       pushHistory('assistant', reply);
       addBot(reply);
+
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(safetyTimer);
+        setStatus('idle', 'Online');
+        unlock();
+      };
+      const safetyTimer = setTimeout(settle, 15000);
+
       ttsSpeak(reply,
         () => setStatus('speaking', 'Speaking...'),
-        () => { setStatus('idle', 'Online'); unlock(); }
+        () => settle()
       );
 
     } catch (e) {

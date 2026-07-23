@@ -49,12 +49,17 @@ export async function ttsSpeak(text, onStart, onDone) {
     waited += 200;
   }
 
-  if (!tts) { _fallback(clean, onDone); return; }
+  if (!tts) {
+    if (onStart) onStart();
+    _fallback(clean, onDone);
+    return;
+  }
 
   try {
     if (onStart) onStart();
     const out = await tts(clean, { voice: 'af_bella', speed: 1.0 });
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (_) {} }
     const buf = ctx.createBuffer(1, out.audio.length, out.sampling_rate);
     buf.getChannelData(0).set(out.audio);
     const src = ctx.createBufferSource();
